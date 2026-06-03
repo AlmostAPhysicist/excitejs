@@ -7,4 +7,3 @@ This is a lightweight reactive framework based on the concept of `Observables` a
 
 - [ ] reactor priority control
 - [ ] is_paused flag
-- [ ] Dependents with explicit and automatic dependencies with Global Variables
