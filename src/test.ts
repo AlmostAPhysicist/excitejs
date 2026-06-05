@@ -33,7 +33,7 @@ console.log("==================================================\n");
     let alias = a; // Aliasing reference check
     alias.value = 3; // Logs b: 3+3=6
 
-    r.stop();
+    r.dispose();
     a.value = 4; // Silence
     console.log("Final value of a (after stop):", a.value);
     console.log("✓ Test 1 Passed.\n");
@@ -53,10 +53,10 @@ console.log("==================================================\n");
     const r2 = Reactor(() => { }, [a]); // Add a second silent listener
     a.value = 6; // Triggers reactor_count -> logs 2
 
-    r2.stop();
+    r2.dispose();
     a.value = 7; // Triggers reactor_count -> logs 1
 
-    reactor_count.stop();
+    reactor_count.dispose();
     a.value = 8; // Silence
     console.log("✓ Test 2 Passed.\n");
 }
@@ -80,13 +80,16 @@ console.log("==================================================\n");
     }, [c]);
 
     a.value = 9; // Logs "c updated to: 9"
-    a.value = 8; // Logs "c updated to: 8"
+
+    r3.paused = true
+    a.value = 8; // No log because r3 is paused, but c still updates to 8
+    r3.paused = false;
 
     a.value = 0; // Logs "c updated to: 0"
     a.value = 0; // Still Logs "c updated to: 0" because we are not doing dirty-checking.
 
-    r3.stop();
-    c_updater.stop();
+    r3.dispose();
+    c_updater.dispose();
     console.log("✓ Test 3 Passed.\n");
 }
 
@@ -120,7 +123,7 @@ console.log("==================================================\n");
     // Now modifying user profile SHOULD trigger the logger!
     userProfile.value = "Admin Smith"; // Logs "[Secure Access] Welcome, Admin Smith"
 
-    logger.stop();
+    logger.dispose();
     console.log("✓ Test 4 Passed.\n");
 }
 
@@ -157,8 +160,8 @@ console.log("==================================================\n");
 
     console.log("   Listeners on 'state' after manual poke:", getListenerCount(state)); // Should be 2 (rA + rB)
 
-    rA.stop();
-    rB.stop();
+    rA.dispose();
+    rB.dispose();
     console.log("✓ Test 5 Passed.\n");
 }
 
@@ -183,9 +186,9 @@ console.log("==================================================\n");
     a.value = "Frozen Dependencies"; // Still triggers because it was already inside the Set!
 
     // Now look what happens if we call reactor.react() while auto is false:
-    // It will run the action, but because it skips reactor.stop() and context assignment,
+    // It will run the action, but because it skips reactor.dispose() and context assignment,
     // it will never alter its dependency tree again. It is locked to whatever was in it.
-    r.stop(); // Clear out all its connections manually
+    r.dispose(); // Clear out all its connections manually
 
     // Wire up a single static listener manually
     a.reactors.add(r);
@@ -204,7 +207,7 @@ console.log("==================================================\n");
     a.value = "Dynamic again"; // Triggers action
     b.value = "I am back in the game"; // Triggers action again because we re-tracked it!
 
-    r.stop();
+    r.dispose();
     console.log("✓ Test 6 Passed.\n");
 }
 

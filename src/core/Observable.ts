@@ -30,6 +30,9 @@ export function Observable<T>(init_value: T): Observable<T> {// initialization
 
         reactors,
         trigger,
+
+        // Define `value` as an accessor property with custom getter and setter
+
         // The 'get' keyword intercepts read attempts (e.g., a.value)
         get value() {
             // AUTOMATIC DEPENDENCY TRACKING:

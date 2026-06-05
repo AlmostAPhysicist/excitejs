@@ -7,30 +7,39 @@ import type { Observable } from "./Observable";
  * ```typescript
  * const a = Observable(0);
  * let b = 0;
- * let r = Reactor([a], () => { b += a.value; console.log(b); });
+ * let r = Reactor(() => { b += a.value; console.log(b); }, [a]);
  * a.value = 1; // logs "1"
- * r.stop();
+ * r.dispose();
  * a.value = 2; // does not log anything
  * ```
  */
 export interface Reactor {
+    // Structural Data
     observables: Set<Observable<any>>;
-    /** Controls whether this reactor dynamically re-tracks dependencies on every execution. */
+    action: () => void;
+
+    // Configuration Flags
     auto: boolean;
+    paused: boolean;
+
+    // Execution Controls
     react(): void;
-    stop(): void;
+    dispose(): void;
 }
 
 export function Reactor(
     action: () => void,
     deps?: Observable<any>[] | null,
     init?: boolean | (() => void) | null,
-    auto?: boolean
+    auto?: boolean,
+    paused?: boolean
 ): Reactor {
 
     // Define parameters and their defaults:
     const observables = new Set<Observable<any>>();
-    const initialAuto = auto !== undefined ? auto : !deps;
+    const initialAuto = auto ?? !deps;
+    let _paused = paused ?? false;
+
 
     // Normalize initFn
     let initFn: (() => void) | null = null;
@@ -42,14 +51,27 @@ export function Reactor(
         initFn = action;
     } // else initFn remains null, meaning no initial method will be run
 
-    // CORE REACTOR LOGIC:
+    // CORE REACTOR LITERAL LOGIC:
     const reactor: Reactor = {
+        // Structural Data
         observables,
+        action,
+
+        // Configuration Flags
+        // Define `paused` as an accessor property with custom getter and setter
+        get paused() { return _paused; },
+        set paused(value: boolean) {
+            if (_paused === value) return;
+            _paused = value;
+        },
         auto: initialAuto,
 
+        // Execution Controls
         react() {
+            if (_paused) return; // Do not run if paused
+
             if (reactor.auto) {
-                reactor.stop(); // Unlink old dependencies before re-evaluating
+                reactor.dispose(); // Unlink old dependencies before re-evaluating
                 setActiveReactor(reactor);
                 action();
                 setActiveReactor(null);
@@ -58,7 +80,7 @@ export function Reactor(
             }
         },
 
-        stop() {
+        dispose() {
             for (const dep of observables) dep.reactors.delete(reactor);
             observables.clear();
         }
@@ -73,7 +95,7 @@ export function Reactor(
     }
 
     // INITIALIZATION
-    if (initFn) {
+    if (initFn && !_paused) {
         if (initialAuto) {
             setActiveReactor(reactor);
             initFn();
