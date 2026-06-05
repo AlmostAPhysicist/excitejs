@@ -1,7 +1,6 @@
 //test.ts
 
-import { Observable } from "./core/Observable";
-import { Reactor } from "./core/Reactor";
+import { Observable, Reactor } from "./index";
 
 // Helper helper function to inspect active listener counts
 function getListenerCount(obs: Observable<any>): number {
@@ -23,7 +22,7 @@ console.log("==================================================\n");
     const r = Reactor(() => {
         b += a.value;
         console.log(`   Action fired! b is now: ${b}`);
-    }, [a]); // Explicitly pass 'a', default init is null
+    }, { deps: [a] }); // Explicitly pass 'a', default init is null
 
     console.log("Initial value of a:", a.value);
 
@@ -48,9 +47,9 @@ console.log("==================================================\n");
 
     const reactor_count = Reactor(() => {
         console.log("   Active reactors hooked to 'a':", getListenerCount(a));
-    }, [a], true); // init: true means run immediately to log initial count (1)
+    }, { deps: [a], initFn: true }); // init: true means run immediately to log initial count (1)
 
-    const r2 = Reactor(() => { }, [a]); // Add a second silent listener
+    const r2 = Reactor(() => { }, { deps: [a] }); // Add a second silent listener
     a.value = 6; // Triggers reactor_count -> logs 2
 
     r2.dispose();
@@ -72,12 +71,12 @@ console.log("==================================================\n");
     // Intermediary bridge reactor
     const c_updater = Reactor(() => {
         c.value = a.value;
-    }, [a]);
+    }, { deps: [a] });
 
     // End-consumer reactor
     const r3 = Reactor(() => {
         console.log("   Consumer caught update! c =", c.value);
-    }, [c]);
+    }, { deps: [c] });
 
     a.value = 9; // Logs "c updated to: 9"
 
@@ -139,8 +138,7 @@ console.log("==================================================\n");
     console.log("Initializing Reactor A (Custom init)...");
     const rA = Reactor(
         () => { runCount++; },
-        [state],
-        () => { console.log("   Custom Init hook fired!"); }
+        { deps: [state], initFn: () => { console.log("   Custom Init hook fired!"); } }
     );
     // B: Auto-Tracking + Lazy Flag (init: false)
     console.log("Initializing Reactor B (Lazy Auto-Tracker)...");
@@ -148,8 +146,7 @@ console.log("==================================================\n");
         () => {
             console.log("   Lazy Reactor B evaluated state:", state.value);
         },
-        null,  // No explicit dependency
-        false  // DO NOT run on startup (Lazy)
+        { deps: null, initFn: false }  // No explicit dependency, DO NOT run on startup (Lazy)
         // auto defaults to true because of deps=null
     );
 
@@ -180,7 +177,7 @@ console.log("==================================================\n");
     a.value = "Changed Auto"; // Triggers completely normally
 
     console.log("   Locking down reactor graph...");
-    r.auto = false; // Turn off dynamic tracking on-the-fly!
+    r.auto_deps = false; // Turn off dynamic tracking on-the-fly!
 
     console.log("   Mutating state while locked down...");
     a.value = "Frozen Dependencies"; // Still triggers because it was already inside the Set!
@@ -199,7 +196,7 @@ console.log("==================================================\n");
 
     // Turn auto back and see that it dynamically re-tracks again:
     console.log("   Re-enabling dynamic tracking...");
-    r.auto = true;
+    r.auto_deps = true;
     b.value = "Still ignored because we haven't re-evaluated yet"; // Silence
 
     r.react(); // Manually trigger to re-evaluate and re-track dependencies

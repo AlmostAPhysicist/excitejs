@@ -1,15 +1,48 @@
 {
   "name": "excitejs",
-  "private": false,
-  "version": "0.0.4",
+  "version": "0.1.0",
+  "description": "Lightweight reactive framework based on Observables and Reactors",
   "type": "module",
+  "author": "AlmostAPhysicist",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AlmostAPhysicist/excitejs.git"
+  },
+  "bugs": {
+    "url": "https://github.com/AlmostAPhysicist/excitejs/issues"
+  },
+  "homepage": "https://github.com/AlmostAPhysicist/excitejs#readme",
+  "keywords": [
+    "observable",
+    "reactor",
+    "reactive",
+    "typescript",
+    "javascript",
+    "signals",
+    "framework"
+  ],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview"
+    "build": "tsc -p tsconfig.build.json && vite build",
+    "preview": "vite preview",
+    "pack:test": "npm pack"
   },
   "devDependencies": {
-    "typescript": "~6.0.2",
-    "vite": "^8.0.12"
+    "typescript": "^6.0.3",
+    "vite": "^8.0.16"
   }
 }

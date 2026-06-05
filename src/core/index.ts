@@ -1,6 +1,5 @@
-export { Observable } from "./Observable";
-export { Reactor } from "./Reactor";
+// src/core/index.ts
 
-// for type checking, does not exist at runtime
-export type { Observable as ObservableType } from "./Observable";
-export type { Reactor as ReactorType } from "./Reactor"; 
+export * from "./observable";
+export * from "./reactor";
+export * from "./context";

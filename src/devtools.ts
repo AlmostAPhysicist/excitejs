@@ -1,5 +1,6 @@
-import { Observable } from "./core/Observable";
-import { Reactor } from "./core/Reactor";
+//devtools.ts
+
+import { Observable, Reactor } from "./index";
 
 declare global {
     interface Window {

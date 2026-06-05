@@ -1,9 +1,9 @@
 // context.ts
 
-import type { Reactor } from "./Reactor";
+import type { Reactor } from "./reactor";
 
-export let activeReactor: Reactor | null = null;
+export let active_reactor: Reactor | null = null;
 
 export function setActiveReactor(reactor: Reactor | null) {
-    activeReactor = reactor;
+    active_reactor = reactor;
 }

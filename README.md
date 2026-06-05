@@ -10,7 +10,8 @@
 
 ## tasks
 
-- reactor priority control
+- add scheduler
+- add jsxFactory and jsx/tsx support
 - template literals
 
 ## progress so far
@@ -33,6 +34,8 @@
   - initialization fucntion customization
   - graph lockdown and unlock with `reactor.auto` to enable automatic dependency updates
   - added pause feature
+  - added `preaction` and `preact`
+  - added priority control
 
 ### Usage
 
@@ -72,11 +75,12 @@ function selective_increment(val: number) {
     }
 }
 
-const r1 = Reactor(() => selective_increment(a.value), [a])
+const r1 = Reactor(() => selective_increment(a.value), {[a]})
 const r2 = Reactor(
     () => console.log(`b's value updated to ${b.value}`), // action 
-    null, // automatic dependency detection when `deps = null`
-    () => console.log(`initial value of b: ${b.value}`) // initial run
+    {
+    initFn: () => console.log(`initial value of b: ${b.value}`) // initial run
+    }
     ) 
   
 
@@ -90,10 +94,9 @@ Clicker Component:
 ```ts
 export function Clicker() {
     const count = Observable(0);
-    function handleClick() { count.value += 1; }
 
     const button = document.createElement("button");
-    button.onclick = handleClick;
+    button.onclick = () => {count.value++};
 
     Reactor(() => {
         button.innerText = `Clicks: ${count.value}`;
@@ -104,3 +107,15 @@ export function Clicker() {
 ```
 
 Some Deeper Examples can be found in `test.ts` for now
+
+## Nomeclature
+
+For consistency in development and debugging and usage, we will try to adhere to the following convensions:
+
+
+| **Category**                       | **Token Types**                                                                  | **Casing Style** | **Examples**                                               |
+| ------------------------------------ | ---------------------------------------------------------------------------------- | ------------------ | ------------------------------------------------------------ |
+| **Data & State** *(Non-Callables)* | Variables, parameters, object properties, primitive values, configuration flags. | `snake_case`     | `init_value`, `paused_reaction`, `auto_deps`               |
+| **Execution** *(Callables)*        | Functions, object methods, utility routines, inline handlers.                    | `camelCase`      | `trigger()`, `preact()`, `initFn()`, `registerScheduler()` |
+| **Architectural** *(Entities)*     | Components, UI Elements, Classes, Factories that instantiate objects.            | `PascalCase`     | `Observable()`, `Reactor()`, `Clicker()`                   |
+| **File System** *(Modules)*        | Module filenames, directory names.                                               | `snake_case`     | `main.ts`, `observable.ts`, `reactor.ts`                   |
