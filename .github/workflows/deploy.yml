@@ -1,0 +1,39 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: ["main"]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install and Build
+        run: |
+          npm install
+          # We run a build that creates the production files
+          npm run build 
+
+      - name: Move to Docs
+        run: |
+          mkdir docs
+          # Copy your specific example to the docs folder so it's served as root
+          cp -r examples/component-toggle/* docs/
+          # Copy the bundled library files if needed
+          cp -r dist/* docs/
+
+      - name: Upload
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './docs'
+
+      - name: Deploy
+        uses: actions/deploy-pages@v4
