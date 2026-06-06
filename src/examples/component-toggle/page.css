@@ -5,34 +5,26 @@ body {
 }
 
 .page-wrapper {
-    /* Takes up the full viewport height */
     min-height: 100vh;
     width: 100%;
-
-    /* Center everything */
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-
-    /* Push the button away from the display container */
-    gap: 40px;
-
+    /* Increased gap slightly to accommodate larger elements */
+    gap: 64px;
     overflow: hidden;
     box-sizing: border-box;
-
-    /* Optional: A nice dark background to make your neon UI elements pop */
     background-color: #fffdf0;
 }
 
 .display-container {
-    /* clamp(MIN, PREFERRED, MAX)
-       - Min: 200px (looks good on very small phones)
-       - Preferred: 30vw (scales with the screen width)
-       - Max: 400px (stops it from getting too huge on 4k monitors)
+    /* Using vmin ensures that if the screen is portrait (tall), 
+       it scales to width, and if landscape (wide), it scales to height.
+       Increased the clamp values to make it larger overall.
     */
-    width: clamp(200px, 30vw, 400px);
-    height: clamp(200px, 30vw, 400px);
+    width: clamp(280px, 45vmin, 600px);
+    height: clamp(280px, 45vmin, 600px);
 
     display: flex;
     justify-content: center;
@@ -43,11 +35,16 @@ body {
 }
 
 .page-toggle-btn {
-    /* Similarly, make the button width responsive */
-    width: clamp(150px, 20vw, 250px);
+    /* Increased width and bounds */
+    width: clamp(200px, 35vmin, 350px);
 
-    /* Optional: scale font size too */
-    font-size: clamp(14px, 1.5vw, 18px);
-    min-height: 3.75em;
+    /* Using rem + vmin for font sizing makes it perfectly accessible */
+    font-size: clamp(1rem, 2.5vmin, 1.5rem);
+
+    /* Responsive height using relative units */
+    min-height: 4.5em;
     color: #3a4b65;
+
+    /* Added cursor for better UX */
+    cursor: pointer;
 }

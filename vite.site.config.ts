@@ -1,17 +1,24 @@
 import { defineConfig } from "vite";
+import { resolve } from "node:path";
 
 export default defineConfig({
-    // This must match your GitHub repo name for assets to load
-    base: "/excitejs/",
+    // 1. If you want the site to be at the root of your repo
+    // leave root as "./"
+    root: "./",
+
+    // 2. Use "./" for base. This is the "magic" fix that solves
+    // the ERR_FILE_NOT_FOUND issue locally and on GH Pages.
+    base: "./",
+
     build: {
-        // This outputs the website files into a folder named 'site'
-        // It stays totally separate from your 'dist' folder
-        outDir: "site",
+        outDir: resolve(__dirname, "dist-site"),
+        emptyOutDir: true,
         rollupOptions: {
+            // Point this to whatever file should be the "Home" page
             input: {
-                // Point exactly to your example HTML file
-                main: "examples/component-toggle/index.html",
-            },
-        },
-    },
+                main: resolve(__dirname, "index.html"),
+                toggle: resolve(__dirname, "src/examples/component-toggle/index.html")
+            }
+        }
+    }
 });

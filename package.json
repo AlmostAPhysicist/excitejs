@@ -28,6 +28,8 @@
     "LICENSE"
   ],
   "sideEffects": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
@@ -36,13 +38,17 @@
     }
   },
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -p tsconfig.build.json && vite build",
-    "preview": "vite preview",
+    "dev": "vite --config vite.site.config.ts",
+    "build:lib": "tsc -p tsconfig.build.json && vite build --config vite.lib.config.ts",
     "build:site": "vite build --config vite.site.config.ts",
-    "pack:test": "npm pack"
+    "build": "npm run build:lib && npm run build:site",
+    "preview": "vite preview --config vite.site.config.ts",
+    "preview:site": "vite preview --outDir dist-site",
+    "deploy": "gh-pages -d dist-site",
+    "prepack": "npm run build:lib"
   },
   "devDependencies": {
+    "gh-pages": "^6.3.0",
     "typescript": "^6.0.3",
     "vite": "^8.0.16"
   }

@@ -1,3 +1,4 @@
+// tsconfig.build.json
 {
     "extends": "./tsconfig.json",
     "compilerOptions": {
@@ -8,7 +9,12 @@
         "emitDeclarationOnly": true,
         "outDir": "./dist"
     },
+    "include": [
+        "src/**/*.ts"
+    ],
     "exclude": [
-        "src/examples/**/*"
+        "src/examples/**/*",
+        "**/*.test.ts",
+        "**/*.spec.ts"
     ]
 }
