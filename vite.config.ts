@@ -10,5 +10,6 @@ export default defineConfig({
             fileName: "index",
             formats: ["es"]
         }
-    }
+    },
+    base: "/excitejs/"
 });
