@@ -1,5 +1,6 @@
-// self.ts
+// reactor.ts
 import { setActiveReactor } from "./context";
+import type { Schedule } from "./scheduler";
 import type { Observable } from "./observable";
 
 /**
@@ -27,15 +28,16 @@ export interface Reactor {
     auto_deps: boolean; // tracks dependencies automatically if true
     auto_preaction: boolean; // sets the preaction function to the output of the reaction function if true
     paused: boolean; // global pause flag for the self
-    paused_reaction: boolean; // pause flag for the reaction function
-    paused_preaction: boolean; // pause flag for the preaction function
+    reaction_paused: boolean; // pause flag for the reaction function
+    preaction_paused: boolean; // pause flag for the preaction function
 
     // Governance Schedulers
-    schedule_reaction: string | null;
-    schedule_preaction: string | null;
+    reaction_schedule: Schedule | null;
+    preaction_schedule: Schedule | null;
 
     // Execution Controls
     detachObservables(): void;
+    schedule(): void;
     react(): void;
     preact(): void;
     dispose(): void;
@@ -50,10 +52,10 @@ export function Reactor(
         auto_deps?: boolean;
         auto_preaction?: boolean;
         paused?: boolean;
-        paused_reaction?: boolean;
-        paused_preaction?: boolean;
-        schedule_reaction?: string | null;
-        schedule_preaction?: string | null;
+        reaction_paused?: boolean;
+        preaction_paused?: boolean;
+        reaction_schedule?: Schedule | null;
+        preaction_schedule?: Schedule | null;
     } = {}
 ): Reactor {
 
@@ -79,12 +81,12 @@ export function Reactor(
         auto_deps: auto_deps,
         auto_preaction: options.auto_preaction ?? true,
         paused: options.paused ?? false,
-        paused_reaction: options.paused_reaction ?? false,
-        paused_preaction: options.paused_preaction ?? false,
+        reaction_paused: options.reaction_paused ?? false,
+        preaction_paused: options.preaction_paused ?? false,
 
         // Governance Schedulers
-        schedule_reaction: options.schedule_reaction ?? null,
-        schedule_preaction: options.schedule_preaction ?? null,
+        reaction_schedule: options.reaction_schedule ?? null,
+        preaction_schedule: options.preaction_schedule ?? null,
 
 
         // Methods
@@ -94,8 +96,27 @@ export function Reactor(
             }
             self.observables.clear();
         },
+
+        schedule() {
+            if (self.paused) return;
+
+            // Route Preaction
+            if (self.preaction_schedule) {
+                self.preaction_schedule.tasks.add(self.preact);
+            } else {
+                self.preact();
+            }
+
+            // Route Reaction
+            if (self.reaction_schedule) {
+                self.reaction_schedule.tasks.add(self.react);
+            } else {
+                self.react();
+            }
+        },
+
         preact() {
-            if (self.paused || self.paused_preaction || !self.preaction) return;
+            if (self.paused || self.preaction_paused || !self.preaction) return;
 
             self.preaction();
             // Dynamic cleanups clear themselves; manual custom preactions persist
@@ -105,7 +126,7 @@ export function Reactor(
         },
 
         react() {
-            if (self.paused || self.paused_reaction) return;
+            if (self.paused || self.reaction_paused) return;
 
             if (self.auto_deps) {
                 self.detachObservables(); // Unlink old dependencies before re-evaluating
@@ -140,7 +161,7 @@ export function Reactor(
     }
 
     // INITIALIZATION
-    if (self.initFn && !self.paused && !self.paused_reaction) {
+    if (self.initFn && !self.paused && !self.reaction_paused) {
         if (self.auto_deps) {
             setActiveReactor(self);
             const result = self.initFn();

@@ -1,0 +1,59 @@
+.circle-container {
+    width: 100px;
+    height: 100px;
+    display: inline-block;
+}
+
+.circle-container svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+    /* Starts the drawing from the top center */
+}
+
+.circle-container circle {
+    fill: none;
+    stroke-width: 8;
+    stroke-linecap: round;
+    /* Circumference for r=45 is ~283 (2 * pi * 45) */
+    stroke-dasharray: 283;
+}
+
+/* Color Configurations */
+.circle-container.blue circle {
+    stroke: #2563eb;
+}
+
+.circle-container.red circle {
+    stroke: #dc2626;
+}
+
+/* Animation Triggers */
+.circle-container.in circle {
+    animation: drawIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.circle-container.out circle {
+    animation: drawOut 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Keyframes */
+@keyframes drawIn {
+    from {
+        stroke-dashoffset: 283;
+    }
+
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
+@keyframes drawOut {
+    from {
+        stroke-dashoffset: 0;
+    }
+
+    to {
+        stroke-dashoffset: 283;
+    }
+}

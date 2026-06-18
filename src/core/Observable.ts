@@ -26,8 +26,7 @@ export function Observable<T>(init_value: T): Observable<T> {// initialization
         trigger() {
             // task: add scheduling logic
             for (const reactor of [...self.reactors]) {
-                reactor.preact();
-                reactor.react();
+                reactor.schedule();
             }
         },
 
@@ -51,49 +50,4 @@ export function Observable<T>(init_value: T): Observable<T> {// initialization
     };
 
     return self;
-}
-
-
-
-// PRIORITY UTILITIES (Leveraging JavaScript Set insertion order rules)
-
-export function moveToTop(observable: Observable<any>, reactor: Reactor): void {
-    if (observable.reactors.delete(reactor)) {
-        const remaining = [...observable.reactors];
-        observable.reactors.clear();
-        observable.reactors.add(reactor); // Insert target first
-        for (const r of remaining) observable.reactors.add(r);
-    }
-}
-
-export function moveToBottom(observable: Observable<any>, reactor: Reactor): void {
-    // Because Sets append new items to the tail end, deleting and 
-    // immediately re-adding naturally drops it to the absolute bottom.
-    if (observable.reactors.delete(reactor)) {
-        observable.reactors.add(reactor);
-    }
-}
-
-export function moveUp(observable: Observable<any>, reactor: Reactor): void {
-    const list = [...observable.reactors];
-    const index = list.indexOf(reactor);
-    if (index > 0) {
-        // Swap positions with the item ahead of it
-        list[index] = list[index - 1];
-        list[index - 1] = reactor;
-        observable.reactors.clear();
-        for (const r of list) observable.reactors.add(r);
-    }
-}
-
-export function moveDown(observable: Observable<any>, reactor: Reactor): void {
-    const list = [...observable.reactors];
-    const index = list.indexOf(reactor);
-    if (index !== -1 && index < list.length - 1) {
-        // Swap positions with the item behind it
-        list[index] = list[index + 1];
-        list[index + 1] = reactor;
-        observable.reactors.clear();
-        for (const r of list) observable.reactors.add(r);
-    }
 }

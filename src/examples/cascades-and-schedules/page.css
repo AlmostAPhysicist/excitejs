@@ -1,0 +1,91 @@
+/* Define standard theme variables for clean, reusable styling */
+:root {
+    --color-playing: #2563eb;
+    /* Crisp Blue */
+    --color-victory: #dc2626;
+    /* Bold Red */
+    --color-bg: #f8fafc;
+    --color-surface: #ffffff;
+    --color-text: #1e293b;
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --radius-lg: 0.75rem;
+    /* Removed transition speed variable */
+}
+
+/* Main Layout Container */
+.page-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+    padding: 3rem;
+    background-color: var(--color-surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    max-width: 400px;
+    margin: 2rem auto;
+    font-family: system-ui, -apple-system, sans-serif;
+    color: var(--color-text);
+}
+
+/* Big Bold Text Display */
+.points-display {
+    font-size: 4rem;
+    font-weight: 800;
+    margin: 0;
+    /* Removed transition property entirely for instantaneous switching */
+}
+
+/* State Modifiers for Display */
+.points-display.playing {
+    color: var(--color-playing);
+}
+
+.points-display.victory {
+    color: var(--color-victory);
+    transform: scale(1.1);
+    /* Instant scale up */
+}
+
+/* Controls grouping */
+.controls-container {
+    display: flex;
+    gap: 1rem;
+    width: 100%;
+    justify-content: center;
+}
+
+/* Toggle specific layout */
+.toggle-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-weight: 500;
+    padding-top: 1rem;
+    border-top: 1px solid #e2e8f0;
+    width: 100%;
+    justify-content: center;
+}
+
+/* Assumed Base Styles for buttons */
+.btn {
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    background-color: var(--color-text);
+    color: white;
+    /* Removed transition property */
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn:not(:disabled):active {
+    transform: scale(0.95);
+}
