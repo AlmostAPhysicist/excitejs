@@ -24,3 +24,6 @@ dist-site
 *.sln
 *.sw?
 *.tgz
+
+.continue
+.continue/*
