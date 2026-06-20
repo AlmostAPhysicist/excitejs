@@ -1,0 +1,1 @@
+function e(e){let t=document.createElement(`button`);return t.className=`btn`,t.innerText=e,t}export{e as t};
