@@ -1,5 +1,5 @@
 // pomodoro.ts
-
+//
 // A pomodoro / focus timer built on the Observable + Reactor + Scheduler engine.
 // - Configurable focus / short break / long break durations
 // - Configurable number of focus cycles before a long break
@@ -9,7 +9,7 @@
 // - A completion chime (Web Audio, no external asset) + browser notification
 
 import { Observable, Reactor, Scheduler } from "../../core/index";
-import "./page.css"
+import "./pomodoro.css";
 
 type Mode = "focus" | "short_break" | "long_break";
 
@@ -19,10 +19,10 @@ interface Durations {
     long_break: number;  // minutes
 }
 
-const MODE_META: Record<Mode, { tab: string; status: string; var: string }> = {
-    focus: { tab: "Focus", status: "Focusing", var: "--mode-focus" },
-    short_break: { tab: "Short Break", status: "Short Break", var: "--mode-short" },
-    long_break: { tab: "Long Break", status: "Long Break", var: "--mode-long" },
+const MODE_META: Record<Mode, { tab: string; status: string }> = {
+    focus: { tab: "Focus", status: "Focusing" },
+    short_break: { tab: "Short Break", status: "Short Break" },
+    long_break: { tab: "Long Break", status: "Long Break" },
 };
 
 const MODE_ORDER: Mode[] = ["focus", "short_break", "long_break"];
@@ -45,42 +45,70 @@ function formatTime(total_seconds: number): string {
     return `${mm}:${ss}`;
 }
 
-// Resolve the mode's accent as an actual color (read from CSS custom properties)
-// so the favicon canvas can match the on-page dial exactly.
-function resolveModeColor(mode: Mode): string {
-    const styles = getComputedStyle(document.documentElement);
-    const value = styles.getPropertyValue(MODE_META[mode].var).trim();
-    return value || "#c9962f";
-}
+// Mirrors the --mode-focus / --mode-short / --mode-long custom properties
+// in pomodoro.css. Kept as a plain constant rather than read via
+// getComputedStyle: those variables are scoped to .pomodoro-page (and
+// further to .dial-wrap[data-mode]), not :root, so reading them off
+// document.documentElement always missed and silently fell back to
+// the default color — which is why the favicon stayed gold in every
+// mode. These are static design tokens, not user-configurable, so a
+// single source of truth here is simpler and more reliable than a
+// DOM round-trip.
+const MODE_COLORS: Record<Mode, string> = {
+    focus: "#c9962f",
+    short_break: "#7c9473",
+    long_break: "#6c87a6",
+};
 
 // --- Completion chime (synthesized, no external audio file needed) ---
-function playChime() {
-    try {
-        const Ctx = window.AudioContext || (window as any).webkitAudioContext;
-        if (!Ctx) return;
-        const ctx: AudioContext = new Ctx();
-        const now = ctx.currentTime;
+//
+// Browsers only let an AudioContext produce sound once it has been
+// resumed inside a real user gesture. A phase completing 25 minutes
+// later, from inside a setInterval callback, is NOT a gesture — so a
+// context created at that moment stays silently "suspended" forever.
+// We instead create/resume ONE context the moment the user clicks
+// Start (a genuine gesture) and keep reusing that same context for
+// every future chime, including ones fired long after, with no
+// further gesture required.
+let shared_audio_ctx: AudioContext | null = null;
 
-        [880, 1318.5].forEach((freq, i) => {
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            const start = now + i * 0.12;
-            osc.type = "sine";
-            osc.frequency.setValueAtTime(freq, start);
-            gain.gain.setValueAtTime(0.0001, start);
-            gain.gain.exponentialRampToValueAtTime(0.25, start + 0.02);
-            gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.55);
-            osc.connect(gain).connect(ctx.destination);
-            osc.start(start);
-            osc.stop(start + 0.6);
-        });
-
-        // Close the context once the tail has played out, so we don't
-        // leak AudioContexts across many pomodoro cycles.
-        setTimeout(() => ctx.close().catch(() => { }), 900);
-    } catch {
-        // Audio isn't available (e.g. no user gesture yet) — fail silently.
+function getAudioContext(): AudioContext | null {
+    const Ctx = window.AudioContext || (window as any).webkitAudioContext;
+    if (!Ctx) return null;
+    if (!shared_audio_ctx) {
+        shared_audio_ctx = new Ctx();
     }
+    return shared_audio_ctx;
+}
+
+// Call this from inside a click handler to unlock audio for later use.
+function unlockAudio() {
+    const ctx = getAudioContext();
+    if (ctx && ctx.state === "suspended") {
+        ctx.resume().catch(() => { });
+    }
+}
+
+function playChime() {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    if (ctx.state === "suspended") {
+        ctx.resume().catch(() => { });
+    }
+    const now = ctx.currentTime;
+
+    [880, 1318.5].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const start = now + i * 0.5;
+        osc.type = "sine";
+        gain.gain.setValueAtTime(0.0001, start);
+        gain.gain.exponentialRampToValueAtTime(1.0, start + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, start + 2.0);
+        osc.connect(gain).connect(ctx.destination);
+        osc.start(start);
+        osc.stop(start + 2.1);
+    });
 }
 
 // --- Browser notification ---
@@ -149,8 +177,8 @@ function createFaviconUpdater() {
         // Rim
         ctx.beginPath();
         ctx.arc(cx, cy, r, 0, Math.PI * 2);
-        ctx.lineWidth = 4;
-        ctx.strokeStyle = "#efe7d8";
+        ctx.lineWidth = 8;
+        ctx.strokeStyle = color;
         ctx.stroke();
 
         link!.href = canvas.toDataURL("image/png");
@@ -341,46 +369,70 @@ export function PomodoroTimer(): HTMLDivElement {
     wrapper.append(plate);
 
     // 4. Reactive pipeline
+    //
+    // All three reactors below use explicit `deps` (auto_deps: false)
+    // rather than auto-tracking. Two reasons:
+    //   1. It makes each reactor's real dependency list an honest,
+    //      readable contract instead of "whatever happened to get
+    //      read this run" — e.g. the resync reactor must NOT depend
+    //      on is_running, and listing deps explicitly guarantees that
+    //      even if the body is edited later.
+    //   2. Because auto_deps is off, reads inside these bodies never
+    //      trigger tracking, so there's no need for _value escape
+    //      hatches to dodge accidental subscriptions.
+    // `initFn: true` makes each one still run immediately on creation
+    // (auto_deps normally implies that; with explicit deps we have to
+    // ask for it).
 
     // Keep remaining_seconds in sync with the selected mode / durations
-    // whenever the timer is NOT running. `is_running._value` bypasses
-    // dependency tracking on purpose — pausing must not trigger a reset.
+    // whenever the timer is NOT running. Runs synchronously (no
+    // schedule) — this is cheap arithmetic, not something that
+    // benefits from batching, and staying synchronous keeps its
+    // ordering relative to the interval reactor unambiguous.
     Reactor(() => {
         const m = mode.value;
         const d = durations.value;
-        if (!is_running._value) {
+        if (!is_running.value) {
             remaining_seconds.value = d[m] * 60;
         }
-    }, { reaction_schedule: compute_s });
+    }, { deps: [mode, durations], auto_deps: false, initFn: true });
 
-    // Drive the ticking interval purely off is_running.
-    let interval_id: number | null = null;
+    // Drive the ticking interval purely off is_running, using the
+    // engine's preaction mechanism for teardown (mirrors the
+    // "active component" pattern in page.ts): whatever this reaction
+    // returns becomes the cleanup that automatically runs before the
+    // NEXT time this reactor fires — clearInterval always happens
+    // before a new interval can be created, even if is_running flips
+    // false→true synchronously in the same tick (e.g. auto-start).
+    // No schedule is assigned, so preact()+react() run immediately
+    // and in order on every change — no deferred/batched execution
+    // that could let two intervals exist at once.
     Reactor(() => {
-        const running = is_running.value;
-        if (running) {
-            if (interval_id === null) {
-                let last = Date.now();
-                interval_id = window.setInterval(() => {
-                    const now = Date.now();
-                    const elapsed = Math.floor((now - last) / 1000);
-                    if (elapsed <= 0) return;
-                    last = now;
-                    const next = remaining_seconds._value - elapsed;
-                    if (next > 0) {
-                        remaining_seconds.value = next;
-                    } else {
-                        remaining_seconds.value = 0;
-                        handlePhaseComplete(false);
-                    }
-                }, 250);
-            }
-        } else if (interval_id !== null) {
-            window.clearInterval(interval_id);
-            interval_id = null;
-        }
-    }, { reaction_schedule: compute_s });
+        if (!is_running.value) return;
 
-    // Render: dial, digits, tabs, favicon, document title, button labels
+        let last = Date.now();
+        const id = window.setInterval(() => {
+            const now = Date.now();
+            const elapsed = Math.floor((now - last) / 1000);
+            if (elapsed <= 0) return;
+            last = now;
+            const next = remaining_seconds._value - elapsed;
+            if (next > 0) {
+                remaining_seconds.value = next;
+            } else {
+                remaining_seconds.value = 0;
+                handlePhaseComplete(false);
+            }
+        }, 250);
+
+        return () => window.clearInterval(id);
+    }, { deps: [is_running], auto_deps: false, initFn: true });
+
+    // Render: dial, digits, tabs, favicon, document title, button labels.
+    // This one DOES stay on render_s — batching several state writes
+    // (e.g. mode + remaining_seconds changing together on phase
+    // completion) into a single paint is exactly what that schedule
+    // is for, and a render is always safe to coalesce or re-run.
     Reactor(() => {
         const m = mode.value;
         const d = durations.value;
@@ -410,8 +462,13 @@ export function PomodoroTimer(): HTMLDivElement {
 
         document.title = `${formatTime(remaining)} · ${MODE_META[m].tab} — Pomodoro`;
 
-        updateFavicon(elapsedFraction, resolveModeColor(m));
-    }, { reaction_schedule: render_s });
+        updateFavicon(elapsedFraction, MODE_COLORS[m]);
+    }, {
+        deps: [mode, durations, remaining_seconds, is_running, completed_focus_cycles, cycles_before_long_break],
+        auto_deps: false,
+        initFn: true,
+        reaction_schedule: render_s,
+    });
 
     // 5. Phase completion + native handlers
 
@@ -422,7 +479,7 @@ export function PomodoroTimer(): HTMLDivElement {
         let next: Mode;
         if (finishedMode === "focus") {
             completed_focus_cycles.value += 1;
-            const isLongBreakDue = completed_focus_cycles.value % cycles_before_long_break._value === 0;
+            const isLongBreakDue = completed_focus_cycles.value % cycles_before_long_break.value === 0;
             next = isLongBreakDue ? "long_break" : "short_break";
         } else {
             next = "focus";
@@ -435,12 +492,13 @@ export function PomodoroTimer(): HTMLDivElement {
 
         mode.value = next;
 
-        if (auto_start._value) {
+        if (auto_start.value) {
             is_running.value = true;
         }
     }
 
     startPauseBtn.addEventListener("click", () => {
+        unlockAudio();
         requestNotificationPermission();
         is_running.value = !is_running.value;
     });
