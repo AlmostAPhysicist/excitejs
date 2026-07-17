@@ -61,8 +61,8 @@ export function ScheduledPage(): HTMLDivElement {
     )
 
     //// Add button listeners
-    button1.addEventListener("click", () => { console.log("button1 clicked"); obs1.value = !obs1.value; scheduler.run() })
-    button2.addEventListener("click", () => { console.log("button2 clicked"); obs2.value = !obs2.value; scheduler.run() })
+    button1.addEventListener("click", () => { console.log("button1 clicked"); obs1.value = !obs1.value; })
+    button2.addEventListener("click", () => { console.log("button2 clicked"); obs2.value = !obs2.value; })
     toggle.addEventListener("change", () => { console.log("toggle changed"); link = !link; });
 
     return page_wrapper

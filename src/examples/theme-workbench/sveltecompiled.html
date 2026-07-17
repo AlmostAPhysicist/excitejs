@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Svelte 5 Performance Benchmark</title>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "svelte": "https://esm.sh/svelte@5",
+                "svelte/internal/disclose-version": "https://esm.sh/svelte@5/internal/disclose-version",
+                "svelte/internal/flags/async": "https://esm.sh/svelte@5/internal/flags/async",
+                "svelte/internal/client": "https://esm.sh/svelte@5/internal/client"
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            background: #1e1e24;
+            color: #fff;
+            padding: 20px;
+        }
+
+        .matrix-workbench {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .control-panel {
+            background: #2a2a35;
+            padding: 15px;
+            border-radius: 8px;
+            line-height: 2;
+        }
+
+        input[type="range"] {
+            width: 200px;
+            vertical-align: middle;
+            margin-left: 10px;
+        }
+
+        .grid-viewport {
+            display: grid;
+            gap: 2px;
+            width: 500px;
+            height: 500px;
+            background: #0f172a;
+            padding: 10px;
+            border-radius: 4px;
+        }
+
+        .matrix-cell {
+            width: 100%;
+            aspect-ratio: 1;
+            transition: transform 0.05s ease-out;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="app"></div>
+
+    <script type="module">
+        import 'svelte/internal/disclose-version';
+        import 'svelte/internal/flags/async';
+        import * as $ from 'svelte/internal/client';
+        // Import Svelte's mounting initializer
+        import { mount } from 'svelte';
+
+        var root = $.from_html(`<div class="matrix-cell"></div>`);
+        var root_1 = $.from_html(`<div class="matrix-workbench"><div class="control-panel">Wave Frequency: <input type="range" min="0.1" max="1.5" step="0.01"/><br/> Wave Amplitude: <input type="range" min="10" max="100" step="1"/><br/> Phase Shift: <input type="range" min="0" max="10" step="0.1"/></div> <div class="grid-viewport"></div></div>`);
+
+        function App($$anchor) {
+            // High-Frequency State 
+            let wave_frequency = $.state(0.4);
+            let wave_amplitude = $.state(80);
+            let wave_phase = $.state(0);
+            const grid_size = 50;
+            const center_point = grid_size / 2;
+
+            // Generate coordinate layout array [0..49]
+            const coordinates = Array.from({ length: grid_size }, (_, i) => i);
+
+            // Pure Mathematical Helper
+            function calculateRipple(x, y, freq, amp, phase) {
+                const distance = Math.sqrt((x - center_point) ** 2 + (y - center_point) ** 2);
+                const current_wave = Math.sin(distance * freq - phase);
+                return (current_wave + 1) / 2 * (amp / 100);
+            }
+
+            var div = root_1();
+            var div_1 = $.child(div);
+            var input = $.sibling($.child(div_1));
+
+            $.remove_input_defaults(input);
+            var input_1 = $.sibling(input, 3);
+            $.remove_input_defaults(input_1);
+            var input_2 = $.sibling(input_1, 3);
+            $.remove_input_defaults(input_2);
+            $.reset(div_1);
+
+            var div_2 = $.sibling(div_1, 2);
+            $.set_style(div_2, '', {}, { 'grid-template-columns': 'repeat(50, 1fr)' });
+
+            $.each(div_2, 21, () => coordinates, $.index, ($$anchor, y) => {
+                var fragment = $.comment();
+                var node = $.first_child(fragment);
+
+                $.each(node, 17, () => coordinates, $.index, ($$anchor, x) => {
+                    const intensity = $.derived(() => calculateRipple($.get(x), $.get(y), $.get(wave_frequency), $.get(wave_amplitude), $.get(wave_phase)));
+                    const size_scale = $.derived(() => 0.3 + $.get(intensity) * 0.7);
+                    const hue = $.derived(() => Math.floor(180 + $.get(intensity) * 100));
+                    var div_3 = root();
+                    let styles;
+
+                    $.template_effect(() => styles = $.set_style(div_3, '', styles, {
+                        transform: `scale(${$.get(size_scale) ?? ''})`,
+                        'background-color': `hsl(${$.get(hue) ?? ''}, 85%, 50%)`,
+                        'border-radius': `${$.get(intensity) * 50}%`
+                    }));
+
+                    $.append($$anchor, div_3);
+                });
+
+                $.append($$anchor, fragment);
+            });
+
+            $.reset(div_2);
+            $.reset(div);
+            $.bind_value(input, () => $.get(wave_frequency), ($$value) => $.set(wave_frequency, $$value));
+            $.bind_value(input_1, () => $.get(wave_amplitude), ($$value) => $.set(wave_amplitude, $$value));
+            $.bind_value(input_2, () => $.get(wave_phase), ($$value) => $.set(wave_phase, $$value));
+            $.append($$anchor, div);
+        }
+
+        // 3. MOUNT EXECUTION: Manually boots up the compiled app into the template root
+        mount(App, {
+            target: document.getElementById("app")
+        });
+    </script>
+</body>
+
+</html>

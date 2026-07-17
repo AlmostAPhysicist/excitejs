@@ -10,8 +10,15 @@
 
 ## tasks
 
-- add scheduler
 - add jsxFactory and jsx/tsx support
+- deep reactivity
+    - element diffing?
+    - array reactivity?
+    - multidimensional array reactivity?
+    - map reactivity?
+    - object reactivity?
+- add a way to create custom elements
+- add a way to create custom attributes
 - template literals
 
 ## progress so far
@@ -36,6 +43,9 @@
   - added pause feature
   - added `preaction` and `preact`
   - added priority control
+
+#### 3. Schedulers
+- added Schedulers, Schedules and autoFlush functionality to queue and order tasks properly with manual or automatic event flushing
 
 ### Usage
 
@@ -105,6 +115,31 @@ export function Clicker() {
     return button;
 }
 ```
+
+Scheduler Demo:
+```ts
+// a, b, f, g, heavyRenderTask are all assumed to be defined elsewhere
+export function SchedulerDemo() {
+    // Defining Schedulers
+    const s = Scheduler(); 
+    const compute_s = s.getOrCreate("compute"); 
+    const render_s = s.getOrCreate("render");
+    // compute_s defined earlier, hence tasks there would run before tasks scheduled during render_s
+
+    const o1 = Observable(a);
+    const o2 = Observable(b);
+
+
+    const r1 = Reactor(() => f(), {deps: [o1, o2], scheduler: compute_s}); // computation that alters render
+    const r2 = Reactor(() => g(), {deps: [o1, o2], scheduler: compute_s}); // also alters render
+    const r3 = Reactor(() => {
+        heavyRenderTask(o1.value, o2.value);
+    }, {scheduler: render_s}); // would run only once after all compute_s tasks are done
+    
+    return s;
+}
+```
+
 
 Some Deeper Examples can be found in `test.ts` for now
 
