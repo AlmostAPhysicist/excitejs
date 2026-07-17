@@ -1,0 +1,8 @@
+import{n as e,t}from"./reactor-CUx62Pa_.js";import{t as n}from"./scheduler-DR5rcNf-.js";var r=[{name:`Alice Smith`,role:`Engineer`,status:`online`},{name:`Bob Jones`,role:`Designer`,status:`offline`},{name:`Charlie Brown`,role:`Product Manager`,status:`online`},{name:`Diana Prince`,role:`Engineer`,status:`offline`},{name:`Evan Wright`,role:`QA Lead`,status:`online`}];function i(){let i=n(),a=i.getOrCreate(`compute`),o=i.getOrCreate(`render`),s=e(``),c=e(`all`),l=e([]),u=document.createElement(`div`);u.className=`directory-wrapper`;let d=document.createElement(`input`);d.placeholder=`Search team members...`;let f=document.createElement(`select`);f.innerHTML=`
+        <option value="all">All Statuses</option>
+        <option value="online">Online</option>
+        <option value="offline">Offline</option>
+    `;let p=document.createElement(`ul`);return p.className=`user-list`,u.append(d,f,p),t(()=>{let e=s.value.toLowerCase().trim(),t=c.value;l.value=r.filter(n=>{let r=n.name.toLowerCase().includes(e)||n.role.toLowerCase().includes(e),i=t===`all`||n.status===t;return r&&i})},{reaction_schedule:a}),t(()=>{p.innerHTML=``;for(let e of l.value){let t=document.createElement(`li`);t.innerHTML=`
+                <strong>${e.name}</strong> — ${e.role} 
+                <span class="badge ${e.status}">${e.status}</span>
+            `,p.appendChild(t)}l.value.length===0&&(p.innerHTML=`<li class="no-results">No team members found.</li>`)},{reaction_schedule:o}),d.oninput=()=>{s.value=d.value},f.onchange=()=>{c.value=f.value},u}document.body.appendChild(i());
