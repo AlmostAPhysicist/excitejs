@@ -27,3 +27,5 @@ dist-site
 
 .continue
 .continue/*
+.vscode
+.vscode/*
