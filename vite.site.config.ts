@@ -26,6 +26,7 @@ export default defineConfig({
                 directory: resolve(__dirname, "src/examples/directory/index.html"),
                 "themed-page": resolve(__dirname, "src/examples/themed-page/index.html"),
                 "theme-workbench": resolve(__dirname, "src/examples/theme-workbench/index.html"),
+                bezier: resolve(__dirname, "src/examples/bezier/index.html"),
             }
         }
     }

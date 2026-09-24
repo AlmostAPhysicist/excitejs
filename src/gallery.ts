@@ -63,6 +63,12 @@ const EXAMPLES: Example[] = [
         description: "A complete focus timer: configurable sessions, a dial, a live favicon and a completion chime.",
         tags: ["app", "scheduler"],
     },
+    {
+        slug: "bezier",
+        title: "Bezier & Circular Note",
+        description: "A multi-curve Bezier editor with smooth pan and zoom, and a markdown note whose text wraps into an octagon inside a circle.",
+        tags: ["app", "explicit deps", "scheduler"],
+    },
 ];
 
 const ALL_TAGS = [...new Set(EXAMPLES.flatMap(example => example.tags))].sort();

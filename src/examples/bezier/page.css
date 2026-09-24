@@ -1,0 +1,356 @@
+/* page.css - Bezier Curve Editor (the note has its own circular_note.css) */
+
+body {
+    margin: 0;
+    background: #0f1215;
+}
+
+.bezier-page {
+    --ink: #e8e6df;
+    --muted: #7d8791;
+    --grey-line: #4b535c;
+    --accent: #d98f4e;
+    --accent-soft: rgba(217, 143, 78, 0.18);
+    --canvas-bg: #14181d;
+    --grid-line: rgba(232, 230, 223, 0.05);
+    --panel-bg: #1b2027;
+    --panel-border: rgba(232, 230, 223, 0.09);
+    --danger: #c96a5c;
+
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: min(760px, 100%);
+    margin: 0 auto;
+    padding: 22px 16px;
+    box-sizing: border-box;
+    color: var(--ink);
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.eyebrow-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.eyebrow-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+}
+
+.eyebrow-dot.md-dot {
+    background: #5ea8c9;
+    box-shadow: 0 0 8px #5ea8c9;
+}
+
+.eyebrow-text {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+/* ---- canvas ---- */
+
+.canvas-frame {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    border-radius: 14px;
+    overflow: hidden;
+    /* size and position are driven by the camera, so the grid pans and zooms */
+    background:
+        linear-gradient(var(--grid-line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-line) 1px, transparent 1px),
+        var(--canvas-bg);
+    background-size: 28px 28px;
+    border: 1px solid var(--panel-border);
+    box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.35);
+}
+
+.bezier-svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+    touch-action: none;
+    cursor: grab;
+    user-select: none;
+}
+
+.canvas-frame.panning .bezier-svg {
+    cursor: grabbing;
+}
+
+/* ---- per-curve group ---- */
+
+.curve-group {
+    --curve-accent: var(--accent);
+}
+
+.control-line {
+    fill: none;
+    stroke: rgba(232, 230, 223, 0.28);
+    stroke-width: 1;
+    stroke-dasharray: 4 4;
+    pointer-events: none;
+}
+
+.curve-hit {
+    fill: none;
+    stroke: transparent;
+    stroke-width: 22;
+    pointer-events: stroke;
+    cursor: pointer;
+}
+
+.curve-group[data-mode="edit"] .curve-hit {
+    cursor: move;
+}
+
+.curve-line {
+    fill: none;
+    stroke: var(--grey-line);
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    transition: stroke 0.15s ease, stroke-width 0.15s ease;
+    pointer-events: none;
+}
+
+.curve-group[data-mode="view"] .curve-line {
+    stroke: var(--curve-accent, var(--accent));
+}
+
+.curve-group[data-mode="view"] .curve-line.hovered {
+    stroke-width: 3.5;
+    filter: drop-shadow(0 0 4px var(--curve-accent, var(--accent)));
+}
+
+.curve-group[data-mode="edit"] .curve-line {
+    stroke: #6b747e;
+}
+
+.curve-group.moving .curve-line {
+    stroke: var(--curve-accent, var(--accent));
+}
+
+/* ---- point handles: radii are in screen px via --u (SVG units per px) ---- */
+
+.point-handle {
+    display: none;
+}
+
+.point-handle.interactive {
+    display: inline;
+    cursor: grab;
+}
+
+.point-handle.dragging {
+    cursor: grabbing;
+}
+
+.point-hit {
+    r: calc(var(--u, 1) * 14px);
+    fill: transparent;
+}
+
+.point-dot {
+    r: calc(var(--u, 1) * 6px);
+    fill: var(--curve-accent, var(--accent));
+    stroke: rgba(20, 24, 29, 0.7);
+    stroke-width: calc(var(--u, 1) * 1.5px);
+    transition: fill 0.12s ease;
+    pointer-events: none;
+}
+
+.point-handle.hovered .point-dot {
+    r: calc(var(--u, 1) * 7.5px);
+    filter: url(#bezier-point-glow);
+}
+
+.point-handle.selected .point-dot {
+    fill: #f2c68a;
+    stroke: var(--ink);
+}
+
+.point-handle.dragging .point-dot {
+    r: calc(var(--u, 1) * 8px);
+}
+
+/* ---- overlay shell ---- */
+
+.canvas-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.canvas-overlay>* {
+    pointer-events: auto;
+}
+
+.canvas-hint {
+    position: absolute;
+    left: 50%;
+    bottom: 14px;
+    max-width: calc(100% - 32px);
+    transform: translateX(-50%);
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: rgba(20, 24, 29, 0.85);
+    border: 1px solid var(--panel-border);
+    color: var(--muted);
+    font-size: 11.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    pointer-events: none;
+}
+
+.overlay-btn {
+    padding: 7px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--panel-border);
+    background: var(--panel-bg);
+    color: var(--ink);
+    font: inherit;
+    font-size: 12.5px;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+
+.overlay-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.overlay-btn.danger:hover {
+    border-color: var(--danger);
+    color: var(--danger);
+}
+
+.add-curve-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    padding: 6px 12px;
+    font-size: 12px;
+}
+
+/* ---- edit actions (Done / Delete) ---- */
+
+.edit-actions {
+    position: absolute;
+    display: flex;
+    gap: 8px;
+    transform: translateY(-100%);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.15s ease, visibility 0.15s;
+}
+
+.edit-actions.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* ---- point add/remove toolbar ---- */
+
+.point-toolbar {
+    position: absolute;
+    display: flex;
+    gap: 4px;
+    transform: translate(-50%, -100%);
+    padding: 3px;
+    border-radius: 8px;
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.12s ease, visibility 0.12s;
+}
+
+.point-toolbar.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.toolbar-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 5px;
+    border: none;
+    background: transparent;
+    color: var(--ink);
+    font-size: 15px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.toolbar-btn:hover {
+    background: var(--accent-soft);
+    color: var(--accent);
+}
+
+.toolbar-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    background: transparent;
+    color: var(--ink);
+}
+
+.remove-btn:hover:not(:disabled) {
+    background: rgba(201, 106, 92, 0.18);
+    color: var(--danger);
+}
+
+/* ---- context menu ---- */
+
+.curve-context-menu {
+    position: absolute;
+    min-width: 140px;
+    padding: 4px;
+    border-radius: 8px;
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-4px);
+    transition: opacity 0.12s ease, transform 0.12s ease, visibility 0.12s;
+    z-index: 5;
+}
+
+.curve-context-menu.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.context-menu-option {
+    width: 100%;
+    text-align: left;
+    padding: 7px 10px;
+    border-radius: 5px;
+    border: none;
+    background: transparent;
+    color: var(--ink);
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.context-menu-option:hover {
+    background: var(--accent-soft);
+    color: var(--accent);
+}

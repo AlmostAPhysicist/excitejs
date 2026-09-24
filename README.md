@@ -8,6 +8,43 @@
   This is a lightweight reactive framework based on the concept of `Observables` and `Reactors`
 </p>
 
+<p align="center">
+  <a href="https://almostaphysicist.github.io/excitejs/">Live examples</a> ·
+  <a href="https://www.npmjs.com/package/excitejs">npm</a>
+</p>
+
+## Getting Started
+
+```sh
+npm install excitejs
+```
+
+```ts
+import { Observable, Reactor, Scheduler } from "excitejs"
+
+const count = Observable(0)
+Reactor(() => console.log(`count is ${count.value}`)) // logs "count is 0"
+count.value++                                          // logs "count is 1"
+```
+
+Works with any bundler (Vite, etc.) and in Node (`import`, or `require` on Node 22+). TypeScript types are included, and there are no dependencies.
+
+**No build step?** Import it straight from a CDN in a module script:
+
+```html
+<script type="module">
+  import { Observable, Reactor } from "https://cdn.jsdelivr.net/npm/excitejs/dist/index.js"
+
+  const count = Observable(0)
+  const button = document.createElement("button")
+  button.onclick = () => count.value++
+  Reactor(() => { button.textContent = `Clicks: ${count.value}` })
+  document.body.append(button)
+</script>
+```
+
+Pin a version for production, e.g. `excitejs@0.2.1`. See [Examples](#examples) and [Design Choices](#design-choices) below for how it all works.
+
 ## tasks
 
 - add jsxFactory and jsx/tsx support

@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Added
+
+* Bezier & Circular Note example (site only, not part of the npm package)
+  * Bezier editor: multiple curves, smooth point and whole-curve dragging, pan with momentum, wheel pan and ctrl/pinch zoom, a grid that moves with the camera
+  * Circular markdown note: text wraps into the intersection of two semi-inscribed squares (an octagon), with a scroll wheel on the rim, rendered markdown, in-place editing, a text options toolbar, and a right-click menu (resize, reshape, flow, lock, color, border)
+* README: Getting Started section (install, import, CDN)
+
 ## [0.2.1] - 2026-9-24
 
 ### Fixed
