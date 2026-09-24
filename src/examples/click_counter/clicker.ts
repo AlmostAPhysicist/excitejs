@@ -1,6 +1,6 @@
 //clicker.ts
 
-import { Observable, Reactor } from "./index";
+import { Observable, Reactor } from "../../core/index";
 
 export function Clicker() {
     const count = Observable(0);

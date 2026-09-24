@@ -1,11 +1,21 @@
 //test.ts
 
-import { Observable, Reactor } from "./index";
+import { Observable, Reactor, Scheduler } from "./index";
+import { moveToTop } from "./core/priority";
 
 // Helper helper function to inspect active listener counts
 function getListenerCount(obs: Observable<any>): number {
     return obs.reactors.size;
 }
+
+// Throws (and fails `npm test`) if a condition doesn't hold
+function check(condition: boolean, message: string): void {
+    if (!condition) throw new Error(`✗ Check failed: ${message}`);
+    console.log(`   ✓ ${message}`);
+}
+
+// Lets queued microtasks (auto-flushing schedules) run
+const nextTick = () => new Promise<void>(resolve => queueMicrotask(resolve));
 
 console.log("==================================================");
 console.log("          EXCITEJS REACTIVE SUITE TESTS           ");
@@ -206,6 +216,155 @@ console.log("==================================================\n");
 
     r.dispose();
     console.log("✓ Test 6 Passed.\n");
+}
+
+// ============================================================================
+// TEST 7: PREACTION (CLEANUP) LIFECYCLE
+// ============================================================================
+{
+    console.log("--- TEST 7: Preaction Lifecycle ---");
+    const a = Observable(0);
+    const log: string[] = [];
+
+    const r = Reactor(() => {
+        log.push(`run ${a.value}`);
+        return () => log.push("cleanup"); // returned function becomes the preaction
+    });
+    check(log.join(",") === "run 0", "reaction runs once on creation");
+
+    a.value = 1;
+    check(log.join(",") === "run 0,cleanup,run 1", "cleanup runs before the next reaction");
+
+    r.dispose();
+    check(log.join(",") === "run 0,cleanup,run 1,cleanup", "cleanup runs on dispose");
+
+    a.value = 2;
+    check(log.length === 4, "nothing runs after dispose");
+    console.log("✓ Test 7 Passed.\n");
+}
+
+// ============================================================================
+// TEST 8: MANUAL TRIGGER ON IN-PLACE MUTATION
+// ============================================================================
+{
+    console.log("--- TEST 8: Manual Trigger ---");
+    const list = Observable<number[]>([]);
+    let seen_length = -1;
+
+    Reactor(() => { seen_length = list.value.length; });
+    check(seen_length === 0, "reactor sees the initial empty list");
+
+    list.value.push(1); // mutating in place does not go through the setter
+    check(seen_length === 0, "in-place mutation alone does not react");
+
+    list.trigger();
+    check(seen_length === 1, "trigger() re-runs reactors without a new value");
+    console.log("✓ Test 8 Passed.\n");
+}
+
+// ============================================================================
+// TEST 9: PAUSE FLAGS
+// ============================================================================
+{
+    console.log("--- TEST 9: Pause Flags ---");
+    const a = Observable(0);
+    let runs = 0;
+
+    const r = Reactor(() => { runs++; }, { deps: [a] });
+
+    r.paused = true;
+    a.value = 1;
+    check(runs === 0, "paused reactor ignores changes");
+
+    r.paused = false;
+    a.value = 2;
+    check(runs === 1, "unpaused reactor reacts again");
+
+    r.reaction_paused = true;
+    a.value = 3;
+    check(runs === 1, "reaction_paused skips the reaction");
+
+    r.dispose();
+    console.log("✓ Test 9 Passed.\n");
+}
+
+// ============================================================================
+// TEST 10: SCHEDULE BATCHING
+// ============================================================================
+{
+    console.log("--- TEST 10: Schedule Batching ---");
+    const render = Scheduler().getOrCreate("render");
+    const a = Observable(0);
+    let runs = 0;
+
+    Reactor(() => { runs++; }, { deps: [a], reaction_schedule: render });
+
+    a.value = 1;
+    a.value = 2;
+    a.value = 3;
+    check(runs === 0, "scheduled reactions don't run synchronously");
+
+    await nextTick();
+    check(runs === 1, "three changes flush as a single run");
+    console.log("✓ Test 10 Passed.\n");
+}
+
+// ============================================================================
+// TEST 11: SCHEDULE ORDERING & MANUAL FLUSH
+// ============================================================================
+{
+    console.log("--- TEST 11: Schedule Ordering & Manual Flush ---");
+    const a = Observable(0);
+
+    // Ordering: schedules flush in creation order, not reactor declaration order
+    const scheduler = Scheduler();
+    const compute_s = scheduler.getOrCreate("compute"); // created first, flushes first
+    const render_s = scheduler.getOrCreate("render");
+    const log: string[] = [];
+
+    // Declared render-first on purpose; schedule order should win
+    Reactor(() => { log.push("render"); }, { deps: [a], reaction_schedule: render_s });
+    Reactor(() => { log.push("compute"); }, { deps: [a], reaction_schedule: compute_s });
+
+    a.value = 1;
+    await nextTick();
+    check(log.join(",") === "compute,render", "compute schedule flushes before render");
+
+    // Manual flush: an auto_flush=false schedule (alone in its scheduler) waits for flush()
+    const manual_scheduler = Scheduler();
+    const manual_s = manual_scheduler.getOrCreate("manual", false);
+    let manual_runs = 0;
+
+    Reactor(() => { manual_runs++; }, { deps: [a], reaction_schedule: manual_s });
+
+    a.value = 2;
+    await nextTick();
+    check(manual_runs === 0, "manual schedule does not flush on its own");
+
+    manual_scheduler.flush(manual_s);
+    check(manual_runs === 1, "manual schedule runs on flush()");
+    console.log("✓ Test 11 Passed.\n");
+}
+
+// ============================================================================
+// TEST 12: REACTOR PRIORITY
+// ============================================================================
+{
+    console.log("--- TEST 12: Reactor Priority ---");
+    const a = Observable(0);
+    const log: string[] = [];
+
+    Reactor(() => { log.push("first"); }, { deps: [a] });
+    const second = Reactor(() => { log.push("second"); }, { deps: [a] });
+
+    a.value = 1;
+    check(log.join(",") === "first,second", "reactors run in subscription order");
+
+    log.length = 0;
+    moveToTop(a.reactors, second);
+    a.value = 2;
+    check(log.join(",") === "second,first", "moveToTop makes a reactor run first");
+    console.log("✓ Test 12 Passed.\n");
 }
 
 console.log("==================================================");

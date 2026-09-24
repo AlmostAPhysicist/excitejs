@@ -17,6 +17,7 @@ export default defineConfig({
             // Point this to whatever file should be the "Home" page
             input: {
                 main: resolve(__dirname, "index.html"),
+                click_counter: resolve(__dirname, "src/examples/click_counter/index.html"),
                 toggle: resolve(__dirname, "src/examples/component-toggle/index.html"),
                 schdulers: resolve(__dirname, "src/examples/cascades-and-schedules/index.html"),
 

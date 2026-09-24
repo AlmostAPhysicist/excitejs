@@ -24,6 +24,11 @@
   ],
   "files": [
     "dist",
+    "src/core",
+    "src/index.ts",
+    "src/test.ts",
+    "src/examples/directory",
+    "src/examples/click_counter",
     "README.md",
     "LICENSE"
   ],
@@ -34,14 +39,17 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
     }
   },
   "scripts": {
     "dev": "vite --config vite.site.config.ts",
-    "build:lib": "tsc -p tsconfig.build.json && vite build --config vite.lib.config.ts",
+    "build:lib": "vite build --config vite.lib.config.ts && tsc -p tsconfig.build.json",
+    "build:test": "vite build --config vite.test.config.ts",
     "build:site": "vite build --config vite.site.config.ts",
-    "build": "npm run build:lib && npm run build:site",
+    "build": "npm run build:lib && npm run build:test && npm run build:site",
+    "test": "npm run build:test && node dist-test/test.js",
     "preview": "vite preview --config vite.site.config.ts",
     "preview:site": "vite preview --outDir dist-site",
     "deploy": "gh-pages -d dist-site",

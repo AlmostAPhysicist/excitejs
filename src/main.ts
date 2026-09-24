@@ -1,13 +1,8 @@
-//main.js 
+// main.ts
 
 import "./devtools";
-import "./test";
-import "./preact-usage";
 
-import { Clicker } from "./clicker";
-import { PreactUsage } from "./preact-usage";
+import { Gallery } from "./gallery.ts";
 
-// Mount the component to the DOM
-const appRoot = document.getElementById("app") || document.body;
-appRoot.appendChild(Clicker());
-appRoot.appendChild(PreactUsage());
+const app_root = document.getElementById("app") ?? document.body;
+app_root.appendChild(Gallery());

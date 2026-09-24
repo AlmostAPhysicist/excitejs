@@ -1,6 +1,6 @@
-//preact-usage.ts
+//preact_usage.ts
 
-import { Observable, Reactor } from "./index";
+import { Observable, Reactor } from "../../core/index";
 
 export function PreactUsage() {
     const elapsed = Observable(0.0);

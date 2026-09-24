@@ -9,12 +9,9 @@
         "emitDeclarationOnly": true,
         "outDir": "./dist"
     },
-    "include": [
-        "src/**/*.ts"
+    // Only the package entry; tsc follows its imports (src/core). Demos/examples get no .d.ts.
+    "files": [
+        "src/index.ts"
     ],
-    "exclude": [
-        "src/examples/**/*",
-        "**/*.test.ts",
-        "**/*.spec.ts"
-    ]
+    "include": []
 }

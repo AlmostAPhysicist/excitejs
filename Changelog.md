@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.1] - 2026-9-24
+
+### Fixed
+
+* npm package now ships its TypeScript declarations (the build was deleting them)
+* Site assets from `public/` no longer end up in the npm package
+* `require("excitejs")` works from CommonJS (Node 22+)
+* `observable.ts` / `reactor.ts` filename casing, which broke builds on case-sensitive systems
+* Themed Page example crashed on load
+
+### Changed
+
+* Separate package, test and site builds; `npm test` runs the test suite in Node
+* npm package also ships the core source, the test suite, and the Directory and Click Counter examples
+* Devtools (`window.Excite`) is no longer part of the package entry
+
+### Added
+
+* Example gallery home page, built with ExciteJS itself
+* Click Counter example (moved from the old home page)
+* Tests for preactions, `trigger()`, pause flags, schedules and priority
+* README: corrected demos, a Design Choices section, and the development workflow
+
 ## [0.2.0] - 2026-7-17
 
 ### Added

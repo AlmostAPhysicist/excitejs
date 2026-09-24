@@ -39,7 +39,7 @@
   - explicit dependencies
   - automatic dependencies
   - initialization fucntion customization
-  - graph lockdown and unlock with `reactor.auto` to enable automatic dependency updates
+  - graph lockdown and unlock with `reactor.auto_deps` to enable automatic dependency updates
   - added pause feature
   - added `preaction` and `preact`
   - added priority control
@@ -56,50 +56,91 @@
 
 ### The Basics
 
+Explicit dependencies: the reactor runs whenever `a` is assigned.
+
 ```ts
 const a = Observable(true)
 let swap_counter = 0
 
 const reactor = Reactor(
-    () => swap_counter++, // reaction on trigger
-    [a] // dependency array
-    )
+    () => swap_counter++,  // reaction on trigger
+    { deps: [a] }          // subscribed to `a` right away, but nothing runs until `a` is assigned
+)
 
-a.value = false //swap_counter=1
-a.value = true //swap_counter=2
+a.value = false // swap_counter = 1
+a.value = true  // swap_counter = 2
 reactor.dispose()
 a.value = false // NO update to swap_counter
 ```
 
-### Some more Complex functionality
+### Automatic Dependencies
 
-Dependency Domino:
+Leave out `deps` and the reactor runs once immediately, subscribing to whatever it reads. It re-tracks on every run, so dependencies follow the branches taken.
+
+```ts
+const logged_in = Observable(false)
+const user_name = Observable("Ada")
+
+Reactor(() => {
+    console.log(logged_in.value ? `Welcome, ${user_name.value}` : "Please log in")
+}) // logs "Please log in"; depends on logged_in only
+
+user_name.value = "Grace" // nothing: user_name wasn't read last run since logged_in was still false
+logged_in.value = true    // logs "Welcome, Grace"; now depends on both
+```
+
+Add `initFn: false` and it starts **lazy**: it doesn't run at creation, so it has read nothing, has no dependencies, and nothing can trigger it. The first manual `react()` picks them up.
+
+```ts
+const greeter = Reactor(() => console.log(`Hi ${user_name.value}`), { initFn: false })
+
+user_name.value = "Linus" // nothing: not subscribed to anything yet
+greeter.react()           // logs "Hi Linus"; this first run subscribes it to user_name
+user_name.value = "Ada"   // logs "Hi Ada"
+```
+
+### Cleanup with Preactions
+
+Return a function from a reaction and it becomes the **preaction**: it runs before the next reaction, and on `dispose()`.
+
+```ts
+const interval_ms = Observable(1000)
+const ticks = Observable(0)
+
+const ticker = Reactor(() => {
+    const id = setInterval(() => ticks.value++, interval_ms.value)
+    return () => clearInterval(id) // preaction: tear down the old interval
+})
+
+interval_ms.value = 500 // old interval cleared, new one started
+ticker.dispose()        // interval cleared for good
+```
+
+### Dependency Domino
+
+Reactors can write to observables, chaining updates synchronously.
 
 ```ts
 const a = Observable(0)
 const b = Observable(0)
 
-function selective_increment(val: number) {
-    if (val % 2 == 0) {
-        b.value += val / 2;
-    }
-}
+Reactor(() => {
+    if (a.value % 2 == 0) b.value += a.value / 2
+}, { deps: [a] })
 
-const r1 = Reactor(() => selective_increment(a.value), {[a]})
-const r2 = Reactor(
-    () => console.log(`b's value updated to ${b.value}`), // action 
-    {
-    initFn: () => console.log(`initial value of b: ${b.value}`) // initial run
-    }
-    ) 
-  
+Reactor(
+    () => console.log(`b updated to ${b.value}`), // reaction
+    // initFn runs once now, instead of the reaction. Its reads (b) are the
+    // dependencies until the first reaction re-tracks, so it reads b too.
+    { initFn: () => console.log(`initial b: ${b.value}`) }
+)
 
-a.value++; //triggers r1, a=1, but b=0 still
-a.value++; //triggers r1, a=2, b=1, triggers r2 and prints log
-a.value++; //triggers r1, a=3 but b=1 still
+a.value++ // a=1, b stays 0
+a.value++ // a=2, b=1 → logs "b updated to 1"
+a.value++ // a=3, b stays 1
 ```
 
-Clicker Component:
+### Clicker Component
 
 ```ts
 export function Clicker() {
@@ -116,32 +157,92 @@ export function Clicker() {
 }
 ```
 
-Scheduler Demo:
+### Scheduler Demo
+
+Route reactions into named stages to batch them and control their order. Stages flush in the order they were created, on the next microtask.
+
 ```ts
-// a, b, f, g, heavyRenderTask are all assumed to be defined elsewhere
-export function SchedulerDemo() {
-    // Defining Schedulers
-    const s = Scheduler(); 
-    const compute_s = s.getOrCreate("compute"); 
-    const render_s = s.getOrCreate("render");
-    // compute_s defined earlier, hence tasks there would run before tasks scheduled during render_s
+const scheduler = Scheduler()
+const compute_s = scheduler.getOrCreate("compute") // created first → flushes first
+const render_s = scheduler.getOrCreate("render")
 
-    const o1 = Observable(a);
-    const o2 = Observable(b);
+const price = Observable(10)
+const quantity = Observable(2)
+const total = Observable(0)
+const label = document.createElement("p")
 
+Reactor(() => { total.value = price.value * quantity.value },
+    { reaction_schedule: compute_s }) // derive state
 
-    const r1 = Reactor(() => f(), {deps: [o1, o2], scheduler: compute_s}); // computation that alters render
-    const r2 = Reactor(() => g(), {deps: [o1, o2], scheduler: compute_s}); // also alters render
-    const r3 = Reactor(() => {
-        heavyRenderTask(o1.value, o2.value);
-    }, {scheduler: render_s}); // would run only once after all compute_s tasks are done
-    
-    return s;
-}
+Reactor(() => { label.textContent = `Total: ${total.value}` },
+    { reaction_schedule: render_s })  // touch the DOM
+
+price.value = 12
+quantity.value = 3
+// nothing has run yet: both changes are queued, and de-duplicated
+// next microtask: compute runs once (total = 36), then render runs once
 ```
 
+More: `src/test.ts` covers every feature, and `src/examples/` has full pages (run `npm run dev`).
 
-Some Deeper Examples can be found in `test.ts` for now
+## Design Choices
+
+These are deliberate, interlinked, and not always obvious.
+
+### Everything is a plain, open object
+
+`Observable()`, `Reactor()` and `Scheduler()` are factories returning plain objects. All state is public and mutable (`obs._value`, `obs.reactors`, `reactor.observables`, every flag), for total hackability. There are no classes and no hidden internals.
+
+### Observables
+
+- **No equality check.** Every assignment triggers, even `a.value = a.value`. Guard it yourself if you need to.
+- **Only assignment is observed.** In-place mutation (`list.value.push(1)`, `obj.value.x = 2`) goes unnoticed; follow it with `obs.trigger()`.
+- **`_value` is the escape hatch.** Reading `_value` doesn't subscribe (peek). Writing `_value` doesn't trigger (silent set).
+- **Reactors run in subscription order.** `obs.reactors` is an ordered `Set`. `trigger()` iterates a snapshot, so reactors added mid-trigger wait for the next one. Reorder with the helpers in `src/core/priority.ts` (`moveToTop`, `moveUp`, …) or use `Schedulers`.
+
+### Reactors
+
+- **`deps` decides how dependencies are found; `initFn` decides what runs at creation.**
+  - *With `deps`* (static): subscribed immediately to exactly those observables. By default nothing runs at creation, and the first reaction happens on the first change.
+  - *Without `deps`* (`auto_deps`): subscribed to whatever each run reads. By default the reaction runs at creation, because that first run is how it finds its dependencies.
+- **`initFn` is what runs at creation**: once, synchronously, inside `Reactor()`. It is *not* "the first reaction, whenever it happens"; every later run calls the reaction.
+  - `true`: run the reaction now (the default without `deps`).
+  - `() => …`: run this function now instead. Without `deps`, its reads are the dependencies until the first reaction re-tracks, so have it read what the reaction reads.
+  - `false`: run nothing now (the default with `deps`). Without `deps`, this makes the reactor **lazy**: it has read nothing, so it has no dependencies and no change can trigger it. The first manual `react()` picks them up.
+  - Only `false` switches the initial run off. `null`, or leaving it out, still runs it for an auto-tracking reactor.
+  - Like a reaction, a function returned from `initFn` becomes the preaction.
+- **Pausing at creation skips the initial run for good.** A reactor created with `paused` or `reaction_paused` set behaves as if `initFn: false`. Without `deps`, that means it stays lazy even after you unpause it.
+- **Auto dependencies are re-tracked on every run.** They are exactly what the last run read, so they follow branches. Setting `reactor.auto_deps = false` freezes the current graph.
+- **Tracking is synchronous.** Only reads during the reaction's own call count. Reads inside callbacks, timers or after an `await` are not tracked.
+- **Reactions are synchronous by default.** An assignment runs its dependents immediately, depth-first, inside the setter. So a reactor that depends on two observables derived from the same source runs once *per* upstream change, and the first run sees one of them stale. Put the reactions on a schedule to batch them.
+- **Pausing drops, it doesn't defer.** Changes that arrive while paused are not replayed on unpause. `paused` blocks everything (reaction, preaction, initial run). `reaction_paused` and `preaction_paused` block one side each.
+- **`dispose()` is reversible.** It runs the pending preaction and detaches from every observable, but the object stays intact. Calling `react()` on an auto-tracking reactor re-subscribes it.
+
+### Preactions
+
+- **A returned function becomes the preaction** (`auto_preaction`, on by default). It runs before the next reaction, or on `dispose()`, and is then cleared. Non-function return values are ignored.
+- **A `preaction` passed as an option runs only once** under that default, since it's cleared after running. Set `auto_preaction: false` to keep it, and it will run before *every* reaction. Returned functions are then ignored.
+- **Preactions and reactions are routed independently** (`preaction_schedule` / `reaction_schedule`). Keep the preaction on the same or an earlier stage. On a later stage, the new reaction runs first, and the preaction that then runs is the *new* reaction's cleanup.
+
+### Schedulers
+
+- **A Schedule is a named stage, a Scheduler is the pipeline.** Stages flush in creation order. `getOrCreate(name)` returns the existing stage if the name is taken.
+- **Tasks are a `Set`.** A reactor queued many times before a flush runs once.
+- **Auto flush means one microtask.** Every change in the same synchronous block lands in a single flush after your code finishes.
+- **Cascades flow forward within a flush.** Work queued onto a *later* stage runs in the same flush. Work queued onto the same or an *earlier* stage waits for the next flush, so a loop can't spin inside one flush.
+- **The first run ignores schedules.** A reactor's initial run happens synchronously in `Reactor()`. Only later changes are routed.
+- **Manual stages (`getOrCreate(name, false)`)** don't request a flush when tasks arrive. They run on `flush(stage)` or `flush()`. Note that a global flush, including one triggered by an auto stage in the same Scheduler, drains them too. Give a manual stage its own Scheduler if it must wait for you.
+- **Schedulers are independent.** Each has its own stages and its own microtask.
+
+### Known caveat: nested reactors
+
+Tracking uses a single global slot (`active_reactor`), not a stack. A tracked run puts its reactor in the slot, then sets it back to `null`, not to whatever was there before. So creating a `Reactor` *inside* a reaction interferes with the outer one:
+
+- **An auto-tracking inner reactor** leaves the slot `null` when its initial run ends. The outer reaction stops tracking for the rest of that run: reads after the `Reactor(…)` line don't subscribe it.
+- **An explicit-deps inner reactor with an `initFn`** runs that init without touching the slot. Its reads subscribe the *outer* reactor.
+- **Each outer re-run creates another inner reactor**, and the old ones stay subscribed. Return `() => inner.dispose()` from the outer reaction to clean them up.
+
+Workaround: read everything the outer reaction needs *before* creating inner reactors, or create them outside reactions.
 
 ## Nomeclature
 
@@ -154,3 +255,59 @@ For consistency in development and debugging and usage, we will try to adhere to
 | **Execution** *(Callables)*        | Functions, object methods, utility routines, inline handlers.                    | `camelCase`      | `trigger()`, `preact()`, `initFn()`, `registerScheduler()` |
 | **Architectural** *(Entities)*     | Components, UI Elements, Classes, Factories that instantiate objects.            | `PascalCase`     | `Observable()`, `Reactor()`, `Clicker()`                   |
 | **File System** *(Modules)*        | Module filenames, directory names.                                               | `snake_case`     | `main.ts`, `observable.ts`, `reactor.ts`                   |
+
+## Development Workflow
+
+There are three independent builds. Each has its own config and output folder:
+
+| Command              | What it builds                                                                 | Config                 | Output       |
+| -------------------- | ------------------------------------------------------------------------------ | ---------------------- | ------------ |
+| `npm run build:lib`  | The **npm package**: `src/index.ts` bundled to `dist/index.js`, then `.d.ts` types via `tsc` | `vite.lib.config.ts`, `tsconfig.build.json` | `dist/`      |
+| `npm run build:test` | `src/test.ts` with the library bundled in, runnable in plain Node              | `vite.test.config.ts`  | `dist-test/` |
+| `npm run build:site` | The demo site (root page + examples) for GitHub Pages                          | `vite.site.config.ts`  | `dist-site/` |
+| `npm run build`      | All three, in the order above                                                  |                        |              |
+
+All output folders are gitignored.
+
+### Day to day
+
+```sh
+npm install       # once
+npm run dev       # dev server for the root page and examples (src/examples/<name>/index.html)
+npm test          # builds and runs src/test.ts in Node
+```
+
+### Site
+
+```sh
+npm run build:site     # build into dist-site/
+npm run preview        # serve the built site locally
+npm run deploy         # push dist-site/ to the gh-pages branch
+```
+
+The home page (`index.html` → `src/main.ts` → `src/gallery.ts`) is a searchable gallery of the examples, itself built with Observables and Reactors. To add an example to the site:
+
+1. add its `index.html` to `rollupOptions.input` in `vite.site.config.ts`
+2. add an entry to `EXAMPLES` in `src/gallery.ts`
+
+### Publishing to npm
+
+`npm publish` runs `build:lib` automatically (via `prepack`). What gets published is controlled by `files` in `package.json`:
+
+- `dist/`: the bundled library and its type definitions (what `import ... from "excitejs"` resolves to)
+- `src/core/`, `src/index.ts`: the library source, for reference and declaration maps
+- `src/test.ts`: the test suite, as usage reference
+- `src/examples/directory/`, `src/examples/click_counter/`: two self-contained examples
+- `README.md`, `LICENSE`
+
+`public/`, the other examples, and the dev files (`main.ts`, `devtools.ts`, etc.) stay on GitHub only.
+
+```sh
+npm pack --dry-run     # list exactly what would be published
+npm version patch      # bump version (or minor / major)
+npm publish
+```
+
+### Devtools
+
+`src/devtools.ts` exposes `window.Excite` for poking at things in the browser console. It is a dev-only side-effect module, and is not part of the package. Import it where you need it (`src/main.ts` already does).

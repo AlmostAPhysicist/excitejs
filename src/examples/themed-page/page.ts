@@ -4,10 +4,18 @@ import { Reactor, Observable } from "../../core/index";
 import "./page.css";
 
 export function Page(): HTMLDivElement {
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const themeObservable = Observable("light");
+    const query = window.matchMedia("(prefers-color-scheme: dark)");
+    const themeObservable = Observable(query.matches ? "dark" : "light");
 
     const page = document.createElement("div");
+
+    // Wrapper for the toggle (created before the Reactor, which reads `input` on its first run)
+    const toggleWrapper = document.createElement("div");
+    toggleWrapper.className = "toggle-wrapper-top-right";
+
+    const toggle = LightDarkToggle();
+    const input = toggle.querySelector("input") as HTMLInputElement;
+
     // Reactor to handle theme switching
     Reactor(() => {
         const theme = themeObservable.value;
@@ -15,13 +23,6 @@ export function Page(): HTMLDivElement {
         // Add this line to update the toggle's state
         input.checked = theme === "dark";
     });
-
-    // Wrapper for the toggle
-    const toggleWrapper = document.createElement("div");
-    toggleWrapper.className = "toggle-wrapper-top-right";
-
-    const toggle = LightDarkToggle();
-    const input = toggle.querySelector("input") as HTMLInputElement;
 
     toggleWrapper.appendChild(toggle);
     // Event listener to trigger reaction
@@ -39,14 +40,10 @@ export function Page(): HTMLDivElement {
   `;
     page.appendChild(content);
 
-    const query = window.matchMedia("(prefers-color-scheme: dark)");
+    // Follow system theme changes
     query.addEventListener("change", (event) => {
-        input.click();
+        themeObservable.value = event.matches ? "dark" : "light";
     });
-
-    if (prefersDark) {
-        input.click();
-    }
 
     return page;
 }
