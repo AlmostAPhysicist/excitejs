@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Added
+
+* Functional Decomposition example (site only, not part of the npm package)
+  * Sample a function (eˣ, trig, logs, powers, roots, a Gaussian) over a range, or paint the data by hand
+  * Least-squares fit onto k basis functions using only the samples: powers of x, Legendre, Fourier, sine and cosine series, B-splines of order 2–4, cubic splines (truncated powers), natural cubic splines, Catmull-Rom splines, and exponentials eⁿˣ
+  * Combined or decomposed view: each term drawn in a colour from red to violet, with opacity weighted by |cᵢ| or by the term's size over the range
+
 ## [0.2.2] - 2026-9-24
 
 ### Added

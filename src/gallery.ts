@@ -69,6 +69,12 @@ const EXAMPLES: Example[] = [
         description: "A multi-curve Bezier editor with smooth pan and zoom, and a markdown note whose text wraps into an octagon inside a circle.",
         tags: ["app", "explicit deps", "scheduler"],
     },
+    {
+        slug: "functional-decomposition",
+        title: "Functional Decomposition",
+        description: "Sample a function (or draw one) and recover it from the points alone as a least-squares sum of k basis functions: powers, Legendre polynomials, Fourier series, splines (B-spline, natural, Catmull-Rom) or exponentials.",
+        tags: ["scheduler", "derived state"],
+    },
 ];
 
 const ALL_TAGS = [...new Set(EXAMPLES.flatMap(example => example.tags))].sort();
