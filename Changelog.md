@@ -4,8 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-10-4
+
 ### Added
 
+* Typography example: a font playground and typography sample page (site only, not part of the npm package)
+  * Load every .ttf / .otf / .woff / .woff2 in a GitHub folder (only that folder's tree is fetched, so huge repos stay cheap), or drop font files in
+  * Fonts grouped into families by file name, with a face bar showing which of Regular, Italic, Bold and Bold Italic each family ships
+  * Rich-text sample sheet (the opening of *Alice's Adventures in Wonderland*, a drop cap, quotes, a specimen, code): set the font, size, colour and highlight for the whole page or a selection, with bold, italic and markdown shortcuts
+  * Code blocks (` ``` `) set in Fira Code Nerd Font by default, independent of the page font; Enter, Tab and paste behave like a code editor
+  * Edit as Markdown (round trips headings, lists, quotes with attributions, code blocks), light/dark theme, and the draft and sources saved in the browser
 * Functional Decomposition example (site only, not part of the npm package)
   * Sample a function (eˣ, trig, logs, powers, roots, a Gaussian) over a range, or paint the data by hand
   * Least-squares fit onto k basis functions using only the samples: powers of x, Legendre, Fourier, sine and cosine series, B-splines of order 2–4, cubic splines (truncated powers), natural cubic splines, Catmull-Rom splines, and exponentials eⁿˣ
