@@ -28,6 +28,7 @@ export default defineConfig({
                 "theme-workbench": resolve(__dirname, "src/examples/theme-workbench/index.html"),
                 bezier: resolve(__dirname, "src/examples/bezier/index.html"),
                 "functional-decomposition": resolve(__dirname, "src/examples/functional-decomposition/index.html"),
+                typography: resolve(__dirname, "src/examples/typography/index.html"),
             }
         }
     }

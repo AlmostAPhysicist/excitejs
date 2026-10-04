@@ -75,6 +75,12 @@ const EXAMPLES: Example[] = [
         description: "Sample a function (or draw one) and recover it from the points alone as a least-squares sum of k basis functions: powers, Legendre polynomials, Fourier series, splines (B-spline, natural, Catmull-Rom) or exponentials.",
         tags: ["scheduler", "derived state"],
     },
+    {
+        slug: "typography",
+        title: "Typography",
+        description: "A font playground: load every font in a GitHub folder (or drop files), then try families, sizes and colours on a rich-text sheet with markdown shortcuts.",
+        tags: ["app", "scheduler", "preaction"],
+    },
 ];
 
 const ALL_TAGS = [...new Set(EXAMPLES.flatMap(example => example.tags))].sort();
