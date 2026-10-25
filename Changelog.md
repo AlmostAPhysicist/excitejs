@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.2.4] - 2026-10-25
+
+### Added
+
+* Color Palettes example: a field guide to calm color schemes (site only, not part of the npm package)
+  * Twelve documented palettes (Flexoki, Solarized, Selenized, Modus, Everforest, Gruvbox, Kanagawa, Rosé Pine, Catppuccin, Tokyo Night, Nord, Alabaster), each with light and dark themes, every flavour, official and derived shade ramps, and in-use specimens
+  * One file per palette in `palettes/`, citing the upstream repo files its values come from; every `.ts`, `.css` or `.json` file dropped there is listed
+  * `testing/verify_sources.mjs` checks every value against those upstream files (all 814 match); `testing/smoke_test.mjs` drives the page in a headless browser
+  * Color theory section with an interactive OKLCH picker, an RGBA mixer, and MathJax formulas
+  * Metrics per theme (text contrast, accent legibility, lightness spread and σL, closest pairs with and without simulated deuteranopia, chroma), a sortable comparison table, and a weighted custom ranking
+  * Color-vision simulation, a normal-vs-simulated comparison strip, and a grayscale print test
+  * Palette editor: suggestions, generated light/dark counterparts, undo, a description field, and export / import as a palette file (.ts), design tokens, CSS variables, Tailwind v4 or JSON
+  * The Hubble palette
+* Gallery: a thumbnail on every card, and the Hubble color palette
+* `npm run thumbnails`: screenshots each example into `src/examples/<slug>/thumbnail.webp`
+* README: thumbnail step for adding an example
+
 ## [0.2.3] - 2026-10-4
 
 ### Added
