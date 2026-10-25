@@ -1,0 +1,44 @@
+/* Hubble by Aryan · Light and Dark · exported from Color Palettes */
+/* description: Warm cream paper and cool slate panels, with clear mid-chroma accents. */
+
+:root {
+  color-scheme: light;
+  --bg: #FEFAF1; /* slot:bg */
+  --bg-2: #EAEEF7; /* slot:bg2 */
+  --ui: #E0E4ED; /* slot:ui */
+  --ui-2: #D6DAE4; /* slot:ui2 */
+  --ui-3: #CDD1DA; /* slot:ui3 */
+  --tx-3: #96999F; /* slot:tx3 */
+  --tx-2: #46494F; /* slot:tx2 */
+  --tx: #1B1F29; /* slot:tx */
+  --red: #BC443B; /* slot:re */
+  --orange: #E9914A; /* slot:or */
+  --yellow: #EECB2F; /* slot:ye */
+  --green: #4E9F48; /* slot:gr */
+  --cyan: #30B7B6; /* slot:cy */
+  --blue: #557CB6; /* slot:bl */
+  --purple: #7D49CB; /* slot:pu */
+  --magenta: #C2388F; /* slot:ma */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --bg: #16130D; /* slot:bg */
+    --bg-2: #181B21; /* slot:bg2 */
+    --ui: #1F2228; /* slot:ui */
+    --ui-2: #252830; /* slot:ui2 */
+    --ui-3: #2C2F36; /* slot:ui3 */
+    --tx-3: #555960; /* slot:tx3 */
+    --tx-2: #8F929A; /* slot:tx2 */
+    --tx: #D2D7E5; /* slot:tx */
+    --red: #CA5146; /* slot:re */
+    --orange: #C67828; /* slot:or */
+    --yellow: #D8B844; /* slot:ye */
+    --green: #44833E; /* slot:gr */
+    --cyan: #6CAAA8; /* slot:cy */
+    --blue: #598AD2; /* slot:bl */
+    --purple: #894FDF; /* slot:pu */
+    --magenta: #C2388F; /* slot:ma */
+  }
+}

@@ -29,6 +29,7 @@ export default defineConfig({
                 bezier: resolve(__dirname, "src/examples/bezier/index.html"),
                 "functional-decomposition": resolve(__dirname, "src/examples/functional-decomposition/index.html"),
                 typography: resolve(__dirname, "src/examples/typography/index.html"),
+                "color-palettes": resolve(__dirname, "src/examples/color-palettes/index.html"),
             }
         }
     }
