@@ -1,25 +1,28 @@
 /* gallery.css */
 
+/* Colors: the Hubble palette (src/examples/color-palettes/palettes/hubble.css).
+   Warm cream page, cool slate cards. The accent is Hubble's red in light mode
+   and its orange in dark mode, the warm accent that reads as text in each. */
 :root {
-    --bg: #f7f6f3;
-    --surface: #ffffff;
-    --text: #1d1d1f;
-    --muted: #6b6b70;
-    --border: #e3e1dc;
-    --accent: #d9480f;
-    --accent-soft: #fff0e8;
+    --bg: #FEFAF1;          /* bg */
+    --surface: #EAEEF7;     /* bg-2 */
+    --text: #1B1F29;        /* tx */
+    --muted: #46494F;       /* tx-2 */
+    --border: #D6DAE4;      /* ui-2 */
+    --accent: #BC443B;      /* red */
+    --accent-soft: #F6E4DB; /* red, 12% over bg */
     color-scheme: light dark;
 }
 
 @media (prefers-color-scheme: dark) {
     :root {
-        --bg: #141416;
-        --surface: #1d1d20;
-        --text: #ececef;
-        --muted: #9a9aa2;
-        --border: #2e2e33;
-        --accent: #ff8a4c;
-        --accent-soft: #2e1f17;
+        --bg: #16130D;          /* bg */
+        --surface: #181B21;     /* bg-2 */
+        --text: #D2D7E5;        /* tx */
+        --muted: #8F929A;       /* tx-2 */
+        --border: #2C2F36;      /* ui-3 */
+        --accent: #C67828;      /* orange */
+        --accent-soft: #362512; /* orange, 18% over bg */
     }
 }
 
@@ -164,6 +167,23 @@ body {
 .card:focus-visible {
     border-color: var(--accent);
     transform: translateY(-2px);
+}
+
+/* Thumbnail fills the card's top edge: pulled out over the card padding */
+.card {
+    overflow: hidden;
+}
+
+.card-thumb {
+    display: block;
+    width: calc(100% + 40px);
+    height: auto;
+    aspect-ratio: 16 / 10;
+    margin: -20px -20px 16px;
+    object-fit: cover;
+    object-position: top;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
 }
 
 .card h2 {

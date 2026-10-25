@@ -53,6 +53,7 @@
     "preview": "vite preview --config vite.site.config.ts",
     "preview:site": "vite preview --outDir dist-site",
     "deploy": "gh-pages -d dist-site",
+    "thumbnails": "node scripts/capture_thumbnails.mjs",
     "prepack": "npm run build:lib"
   },
   "devDependencies": {

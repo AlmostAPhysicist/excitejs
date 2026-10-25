@@ -326,6 +326,7 @@ The home page (`index.html` → `src/main.ts` → `src/gallery.ts`) is a searcha
 
 1. add its `index.html` to `rollupOptions.input` in `vite.site.config.ts`
 2. add an entry to `EXAMPLES` in `src/gallery.ts`
+3. with `npm run dev` running, run `npm run thumbnails -- <slug>` to screenshot it into `src/examples/<slug>/thumbnail.webp` for its gallery card (headless Chrome or Edge; `thumbnail_scroll` and `thumbnail_width` on the entry adjust the shot)
 
 ### Publishing to npm
 

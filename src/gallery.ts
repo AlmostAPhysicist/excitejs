@@ -12,7 +12,14 @@ interface Example {
     title: string;
     description: string;
     tags: string[];
+    // For `npm run thumbnails`: "selector@fraction" scrolls the page so that
+    // element's top sits that far down the frame before capturing
+    thumbnail_scroll?: string;
+    thumbnail_width?: number; // capture window width (default 960), height at 16:10
 }
+
+// src/examples/<slug>/thumbnail.webp, written by `npm run thumbnails`
+const THUMBNAILS = import.meta.glob<string>("./examples/*/thumbnail.webp", { eager: true, query: "?url", import: "default" });
 
 const EXAMPLES: Example[] = [
     {
@@ -80,6 +87,14 @@ const EXAMPLES: Example[] = [
         title: "Typography",
         description: "A font playground: load every font in a GitHub folder (or drop files), then try families, sizes and colours on a rich-text sheet with markdown shortcuts.",
         tags: ["app", "scheduler", "preaction"],
+    },
+    {
+        slug: "color-palettes",
+        title: "Color Palettes",
+        description: "A field guide to twelve calm color schemes: every theme and shade, color theory with a live OKLCH picker, measured metrics, a custom ranking, and a palette editor with export.",
+        tags: ["app", "explicit deps", "preaction"],
+        thumbnail_scroll: "#theory@0.88",
+        thumbnail_width: 1440,
     },
 ];
 
@@ -165,9 +180,22 @@ export function Gallery(): HTMLElement {
         const card = el("a", "card");
         card.href = `src/examples/${example.slug}/index.html`;
 
+        // The example's thumbnail; the card stays text-only without one
+        const thumb_url = THUMBNAILS[`./examples/${example.slug}/thumbnail.webp`];
+        const thumb = el("img", "card-thumb");
+        if (thumb_url) {
+            thumb.src = thumb_url;
+            thumb.alt = "";
+            thumb.loading = "lazy";
+            thumb.decoding = "async";
+            thumb.width = 480;
+            thumb.height = 300;
+        }
+
         const tags = el("div", "card-tags");
         for (const tag of example.tags) tags.appendChild(el("span", "card-tag", tag));
 
+        if (thumb_url) card.append(thumb);
         card.append(
             el("h2", undefined, example.title),
             el("p", undefined, example.description),
