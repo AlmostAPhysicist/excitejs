@@ -81,6 +81,7 @@ interface GithubTree {
 
 const BOOK_LINK = "https://github.com/nicoverbruggen/ebook-fonts/tree/13834303660d071657b1aa885da02c2d075b5368/fonts/core";
 const CODE_LINK = "https://github.com/ryanoasis/nerd-fonts/tree/master/patched-fonts/FiraCode";
+const KALAM_LINK = "https://github.com/google/fonts/tree/main/ofl/kalam"; // Devanagari handwriting, for the poem that ends the sample
 const PREFERRED_START = "Libron";        // first document font, once BOOK_LINK loads
 const CODE_FAMILY = "Fira Code Nerd Font Mono"; // default font of code, once any source provides it
 const MAX_FILES = 200;
@@ -143,7 +144,17 @@ else:
 \`\`\`
 
 Nerd Font icons work in inline code too: \`\uE0A0 main\`, \`\uF09B github\`.
+
+---
 `;
+
+// Ends the sample, set in Kalam (loaded from KALAM_LINK)
+const POEM = [
+    "\u0915\u093F \u0935\u094B \u092A\u0939\u0932\u0940 \u0938\u0940 \u092E\u094B\u0939\u092C\u094D\u092C\u0924 \u092F\u093E\u0926 \u0906\u0924\u0940 \u0939\u0948",
+    "\u091C\u092C \u0909\u0938\u0915\u0940 \u0906\u0901\u0916\u0947\u0902 \u092E\u0941\u091D\u0938\u0947 \u0915\u0941\u091B \u0915\u0939\u0932\u093E\u0924\u0940 \u0939\u0948",
+    "\u091C\u092C \u092C\u093F\u0928 \u0915\u0939\u0947 \u0935\u094B \u092A\u0942\u0930\u0940 \u0926\u093E\u0938\u094D\u0924\u093E\u0928 \u0938\u092E\u091D \u091C\u093E\u0924\u0940 \u0939\u0948",
+    "\u091C\u092C \u092E\u0947\u0930\u0940 \u0939\u092F\u093E \u092E\u0947\u0902 \u092D\u0940 \u0935\u094B \u092E\u0947\u0930\u0947 \u092E\u0928 \u0915\u093F \u092A\u0939\u0947\u0932\u0940 \u0938\u0941\u0932\u091D\u093E\u0924\u0940 \u0939\u0948",
+];
 
 const TEMPLATE = `
 <div class="app">
@@ -260,7 +271,7 @@ const TEMPLATE = `
 
 // localStorage can be missing or throw (private windows, blocked storage).
 // Bump STORE_PREFIX when the sample text or default links change, so old drafts don't hide them.
-const STORE_PREFIX = "typography:v1:";
+const STORE_PREFIX = "typography:v2:";
 const store = {
     get<T>(key: string, fallback: T): T {
         try {
@@ -833,7 +844,7 @@ export function Page(): HTMLElement {
         const n = familyCount(source);
         setSourceState(source, "ok", `${n} ${n === 1 ? "family" : "families"} · ${n_files} files`);
         families.trigger();
-        if (doc_fam._value.builtin) {
+        if (doc_fam._value.builtin && source.link !== KALAM_LINK) { // Kalam is only for the poem
             // The document wants a text face: skip code fonts, which may well finish loading first
             const fams = families._value.filter(f => f.source_id === source.id);
             const pick = fams.find(f => f.name === PREFERRED_START)
@@ -1357,12 +1368,15 @@ export function Page(): HTMLElement {
     // ------------------------------------------------------------------
 
     const draft = store.get<string | null>("draft", null);
-    editor.innerHTML = draft || mdToHtml(SAMPLE.replace(/\*\*\*([^*]+)\*\*\*/g, "**_$1_**"));
+    // The poem names Kalam's family as addFace() will register it: tc-<hash of its link>-<family key>
+    const kalam_css = `"tc-${hash(KALAM_LINK)}-kalam", cursive`;
+    const poem_html = `<p style="font-family:${esc(kalam_css)}">${POEM.map(esc).join("<br>")}</p>`;
+    editor.innerHTML = draft || mdToHtml(SAMPLE.replace(/\*\*\*([^*]+)\*\*\*/g, "**_$1_**")) + poem_html;
     if (!draft) editor.querySelector("p")?.classList.add("first"); // drop cap on the opening paragraph
     word_counter.schedule(); // queued on "render", which flushes after main.ts mounts the page
 
     const links = store.get<string[] | null>("links", null);
-    addLinks((links && links.length ? links : [BOOK_LINK, CODE_LINK]).join("\n"));
+    addLinks((links && links.length ? links : [BOOK_LINK, CODE_LINK, KALAM_LINK]).join("\n"));
 
     return root;
 }
