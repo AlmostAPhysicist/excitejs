@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.2.5] - 2026-10-26
+
+### Added
+
+* Gallery: examples open most interesting first, with an Order toggle for a beginner-friendly order, and a level badge (beginner, intermediate, advanced) on every card
+* Typography example: a Hindi poem set in Kalam closes the sample sheet, with Kalam loaded from google/fonts as a third default source (saved drafts and font links reset once)
+* README: tasks from building the site (scopes for disposing reactors, a tracking stack for nested reactors, list rendering, error handling in reactions and flushes)
+
 ## [0.2.4] - 2026-10-25
 
 ### Added
