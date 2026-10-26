@@ -1,6 +1,6 @@
 {
   "name": "excitejs",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "Lightweight reactive framework based on Observables and Reactors",
   "type": "module",
   "author": "AlmostAPhysicist",
