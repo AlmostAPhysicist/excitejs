@@ -1,6 +1,7 @@
 // gallery.ts
 //
-// The site's home page: a searchable, tag-filterable list of the examples.
+// The site's home page: a searchable, tag-filterable list of the examples,
+// most interesting first, or in a beginner-friendly order to learn from.
 // Built with excitejs itself. Every card, tag chip and the result count has
 // its own auto-tracking Reactor, so a keystroke only touches what changed.
 
@@ -12,6 +13,7 @@ interface Example {
     title: string;
     description: string;
     tags: string[];
+    level: 1 | 2 | 3; // 1 beginner, 2 intermediate, 3 advanced: the "Beginner friendly" order
     // For `npm run thumbnails`: "selector@fraction" scrolls the page so that
     // element's top sits that far down the frame before capturing
     thumbnail_scroll?: string;
@@ -21,84 +23,105 @@ interface Example {
 // src/examples/<slug>/thumbnail.webp, written by `npm run thumbnails`
 const THUMBNAILS = import.meta.glob<string>("./examples/*/thumbnail.webp", { eager: true, query: "?url", import: "default" });
 
+// Most interesting first: the default order
 const EXAMPLES: Example[] = [
     {
-        slug: "click_counter",
-        title: "Click Counter",
-        description: "A click counter, and an interval whose returned cleanup restarts it whenever its speed changes.",
-        tags: ["auto deps", "preaction"],
-    },
-    {
-        slug: "directory",
-        title: "Team Directory",
-        description: "Search and filter a list. Filtering runs on a compute schedule, DOM updates on a render schedule.",
-        tags: ["auto deps", "scheduler", "derived state"],
-    },
-    {
-        slug: "cascades-and-schedules",
-        title: "Cascades & Schedules",
-        description: "The same chain of reactors side by side, with and without a Scheduler, to show how schedules order work.",
-        tags: ["explicit deps", "scheduler", "trigger"],
-    },
-    {
-        slug: "component-toggle",
-        title: "Component Toggle",
-        description: "Cycles through UI components. Each is removed by the reaction's cleanup before the next one mounts.",
-        tags: ["preaction", "components"],
-    },
-    {
-        slug: "themed-page",
-        title: "Themed Page",
-        description: "A light/dark switch driving the page theme from a single Observable.",
-        tags: ["components"],
-    },
-    {
-        slug: "theme-workbench",
-        title: "Theme Workbench",
-        description: "Raw controls feed derived style values that restyle live previews, split across compute and render schedules.",
-        tags: ["scheduler", "derived state"],
-    },
-    {
-        slug: "ripple",
-        title: "Ripple Matrix",
-        description: "A 50×50 grid of 2,500 cells redrawn from a handful of wave Observables.",
-        tags: ["scheduler", "performance"],
-    },
-    {
-        slug: "pomodoro",
-        title: "Pomodoro Timer",
-        description: "A complete focus timer: configurable sessions, a dial, a live favicon and a completion chime.",
-        tags: ["app", "scheduler"],
-    },
-    {
-        slug: "bezier",
-        title: "Bezier & Circular Note",
-        description: "A multi-curve Bezier editor with smooth pan and zoom, and a markdown note whose text wraps into an octagon inside a circle.",
-        tags: ["app", "explicit deps", "scheduler"],
-    },
-    {
-        slug: "functional-decomposition",
-        title: "Functional Decomposition",
-        description: "Sample a function (or draw one) and recover it from the points alone as a least-squares sum of k basis functions: powers, Legendre polynomials, Fourier series, splines (B-spline, natural, Catmull-Rom) or exponentials.",
-        tags: ["scheduler", "derived state"],
+        slug: "color-palettes",
+        title: "Color Palettes",
+        description: "A field guide to twelve calm color schemes: every theme and shade, color theory with a live OKLCH picker, measured metrics, a custom ranking, and a palette editor with export.",
+        tags: ["app", "explicit deps", "preaction"],
+        level: 3,
+        thumbnail_scroll: "#theory@0.88",
+        thumbnail_width: 1440,
     },
     {
         slug: "typography",
         title: "Typography",
         description: "A font playground: load every font in a GitHub folder (or drop files), then try families, sizes and colours on a rich-text sheet with markdown shortcuts.",
         tags: ["app", "scheduler", "preaction"],
+        level: 3,
     },
     {
-        slug: "color-palettes",
-        title: "Color Palettes",
-        description: "A field guide to twelve calm color schemes: every theme and shade, color theory with a live OKLCH picker, measured metrics, a custom ranking, and a palette editor with export.",
-        tags: ["app", "explicit deps", "preaction"],
-        thumbnail_scroll: "#theory@0.88",
-        thumbnail_width: 1440,
+        slug: "functional-decomposition",
+        title: "Functional Decomposition",
+        description: "Sample a function (or draw one) and recover it from the points alone as a least-squares sum of k basis functions: powers, Legendre polynomials, Fourier series, splines (B-spline, natural, Catmull-Rom) or exponentials.",
+        tags: ["scheduler", "derived state"],
+        level: 3,
+    },
+    {
+        slug: "bezier",
+        title: "Bezier & Circular Note",
+        description: "A multi-curve Bezier editor with smooth pan and zoom, and a markdown note whose text wraps into an octagon inside a circle.",
+        tags: ["app", "explicit deps", "scheduler"],
+        level: 3,
+    },
+    {
+        slug: "pomodoro",
+        title: "Pomodoro Timer",
+        description: "A complete focus timer: configurable sessions, a dial, a live favicon and a completion chime.",
+        tags: ["app", "scheduler"],
+        level: 3,
+    },
+    {
+        slug: "ripple",
+        title: "Ripple Matrix",
+        description: "A 50×50 grid of 2,500 cells redrawn from a handful of wave Observables.",
+        tags: ["scheduler", "performance"],
+        level: 2,
+    },
+    {
+        slug: "theme-workbench",
+        title: "Theme Workbench",
+        description: "Raw controls feed derived style values that restyle live previews, split across compute and render schedules.",
+        tags: ["scheduler", "derived state"],
+        level: 2,
+    },
+    {
+        slug: "cascades-and-schedules",
+        title: "Cascades & Schedules",
+        description: "The same chain of reactors side by side, with and without a Scheduler, to show how schedules order work.",
+        tags: ["explicit deps", "scheduler", "trigger"],
+        level: 2,
+    },
+    {
+        slug: "directory",
+        title: "Team Directory",
+        description: "Search and filter a list. Filtering runs on a compute schedule, DOM updates on a render schedule.",
+        tags: ["auto deps", "scheduler", "derived state"],
+        level: 2,
+    },
+    {
+        slug: "component-toggle",
+        title: "Component Toggle",
+        description: "Cycles through UI components. Each is removed by the reaction's cleanup before the next one mounts.",
+        tags: ["preaction", "components"],
+        level: 1,
+    },
+    {
+        slug: "themed-page",
+        title: "Themed Page",
+        description: "A light/dark switch driving the page theme from a single Observable.",
+        tags: ["components"],
+        level: 1,
+    },
+    {
+        slug: "click_counter",
+        title: "Click Counter",
+        description: "A click counter, and an interval whose returned cleanup restarts it whenever its speed changes.",
+        tags: ["auto deps", "preaction"],
+        level: 1,
     },
 ];
 
 const ALL_TAGS = [...new Set(EXAMPLES.flatMap(example => example.tags))].sort();
+
+const LEVEL_NAMES = { 1: "beginner", 2: "intermediate", 3: "advanced" };
+
+// By level; within a level the plainer ones first (the reverse of the interest order)
+const BEGINNER_ORDER = [...EXAMPLES].sort((a, b) => a.level - b.level || EXAMPLES.indexOf(b) - EXAMPLES.indexOf(a));
+
+type SortMode = "interesting" | "beginner";
+const SORT_MODES: [SortMode, string][] = [["interesting", "Most interesting"], ["beginner", "Beginner friendly"]];
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, class_name?: string, text?: string): HTMLElementTagNameMap[K] {
     const node = document.createElement(tag);
@@ -111,6 +134,7 @@ export function Gallery(): HTMLElement {
     //// State
     const search_query = Observable("");
     const active_tag = Observable<string | null>(null);
+    const sort_mode = Observable<SortMode>("interesting");
 
     // Reads both observables, so any Reactor that calls it tracks both
     function matches(example: Example): boolean {
@@ -172,10 +196,29 @@ export function Gallery(): HTMLElement {
     const status = el("p", "gallery-status");
     status.setAttribute("aria-live", "polite");
 
-    controls.append(search_input, chips, status);
+    const sort = el("div", "gallery-sort");
+    sort.setAttribute("role", "group");
+    sort.setAttribute("aria-label", "Order");
+    sort.appendChild(el("span", undefined, "Order"));
+    for (const [mode, label] of SORT_MODES) {
+        const button = el("button", "chip", label);
+        button.type = "button";
+        button.onclick = () => { sort_mode.value = mode; };
+        Reactor(() => {
+            const is_active = sort_mode.value === mode;
+            button.classList.toggle("active", is_active);
+            button.setAttribute("aria-pressed", String(is_active));
+        });
+        sort.appendChild(button);
+    }
+
+    const bar = el("div", "gallery-bar");
+    bar.append(status, sort);
+    controls.append(search_input, chips, bar);
 
     //// Cards
     const grid = el("div", "gallery-grid");
+    const cards = new Map<Example, HTMLAnchorElement>();
     for (const example of EXAMPLES) {
         const card = el("a", "card");
         card.href = `src/examples/${example.slug}/index.html`;
@@ -193,6 +236,7 @@ export function Gallery(): HTMLElement {
         }
 
         const tags = el("div", "card-tags");
+        tags.appendChild(el("span", `card-level level-${example.level}`, LEVEL_NAMES[example.level]));
         for (const tag of example.tags) tags.appendChild(el("span", "card-tag", tag));
 
         if (thumb_url) card.append(thumb);
@@ -203,8 +247,13 @@ export function Gallery(): HTMLElement {
         );
 
         Reactor(() => { card.hidden = !matches(example); });
-        grid.appendChild(card);
+        cards.set(example, card);
     }
+
+    // Appending an existing card moves it, so this reorders without rebuilding
+    Reactor(() => {
+        for (const example of sort_mode.value === "beginner" ? BEGINNER_ORDER : EXAMPLES) grid.appendChild(cards.get(example)!);
+    });
 
     const empty = el("p", "gallery-empty", "No examples match.");
 
