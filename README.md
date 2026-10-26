@@ -47,7 +47,17 @@ Pin a version for production, e.g. `excitejs@0.2.1`. See [Examples](#examples) a
 
 ## tasks
 
-- add jsxFactory and jsx/tsx support
+- **JSX / TSX support** (`jsxFactory`). Components build the DOM by hand (`createElement`, or `innerHTML` strings and re-wiring handlers), which gets verbose for anything larger than a widget.
+- **A tracking stack for nested reactors.** Tracking uses one global slot (`active_reactor`), so creating a Reactor inside a reaction breaks the outer one (see [Known caveat](#known-caveat-nested-reactors)). Today you read everything before creating inner reactors, or use explicit deps. Fix: push/pop a stack, so the outer reactor resumes tracking afterwards.
+- **Scopes for disposing a group of reactors**, e.g. `const root = Scope(() => build())` then `root.dispose()`. Needed whenever something unmounts (a toggled component, a page route): today you keep every Reactor handle and dispose each one, or return a cleanup that does. A scope would collect every Reactor created inside it; the stack above can track these groups too.
+- **List rendering.** Rendering a list means rebuilding it on every change, or diffing it by hand. A keyed helper (one item → one node, reused across updates) would cover the common case. Related: deep reactivity below.
+- **Decide and document what happens when a reaction throws.** Today nothing catches it:
+    - in a scheduled flush, the rest of that stage is dropped (its tasks were already cleared), later stages wait for the next flush, and the error surfaces as an uncaught microtask error
+    - without a schedule, it throws out of the `obs.value = …` assignment, and the remaining reactors on that observable don't run
+    - **bug:** an auto-tracking reaction that throws never resets `active_reactor`, so later `.value` reads anywhere subscribe that reactor. Reset it in a `finally`.
+
+    Either "the rest still runs" or "everything stops" is fine, but it should be deliberate and written down: a half-run render stage is confusing to debug.
+- **Comment the first-run exception beside `reaction_schedule` in the Reactor types.** A reactor with `reaction_schedule: render_s` still runs once, synchronously, when created (documented under [Schedulers](#schedulers), but surprising when reading the options).
 - deep reactivity
     - element diffing?
     - array reactivity?
@@ -325,7 +335,7 @@ npm run deploy         # push dist-site/ to the gh-pages branch
 The home page (`index.html` → `src/main.ts` → `src/gallery.ts`) is a searchable gallery of the examples, itself built with Observables and Reactors. To add an example to the site:
 
 1. add its `index.html` to `rollupOptions.input` in `vite.site.config.ts`
-2. add an entry to `EXAMPLES` in `src/gallery.ts`
+2. add an entry to `EXAMPLES` in `src/gallery.ts`, where it belongs in the "most interesting" order, with a `level` (1 beginner to 3 advanced) for the "Beginner friendly" order
 3. with `npm run dev` running, run `npm run thumbnails -- <slug>` to screenshot it into `src/examples/<slug>/thumbnail.webp` for its gallery card (headless Chrome or Edge; `thumbnail_scroll` and `thumbnail_width` on the entry adjust the shot)
 
 ### Publishing to npm
