@@ -35,6 +35,22 @@ const EXAMPLES: Example[] = [
         thumbnail_width: 1440,
     },
     {
+        slug: "ising-model",
+        title: "Ising Model",
+        description: "A live 2D Ising magnet you can pan and zoom from the whole lattice down to single spins, with a thermometer to drag through the critical point, and an illustrated explainer of the Markov step, Boltzmann odds and Onsager's T_c.",
+        tags: ["app", "scheduler", "explicit deps", "performance"],
+        level: 3,
+        thumbnail_width: 1440,
+    },
+    {
+        slug: "pan-zoom",
+        title: "Pan & Zoom",
+        description: "A reusable canvas camera for mouse, trackpad, touch, pen and keyboard: eased zoom about the cursor, flings, pinch, bounds, and a layer that blits on pans and repaints only the exposed strips.",
+        tags: ["app", "scheduler", "performance", "explicit deps"],
+        level: 3,
+        thumbnail_width: 1440,
+    },
+    {
         slug: "typography",
         title: "Typography",
         description: "A font playground: load every font in a GitHub folder (or drop files), then try families, sizes and colours on a rich-text sheet with markdown shortcuts.",

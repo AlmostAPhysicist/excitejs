@@ -30,6 +30,8 @@ export default defineConfig({
                 "functional-decomposition": resolve(__dirname, "src/examples/functional-decomposition/index.html"),
                 typography: resolve(__dirname, "src/examples/typography/index.html"),
                 "color-palettes": resolve(__dirname, "src/examples/color-palettes/index.html"),
+                "pan-zoom": resolve(__dirname, "src/examples/pan-zoom/index.html"),
+                "ising-model": resolve(__dirname, "src/examples/ising-model/index.html"),
             }
         }
     }
