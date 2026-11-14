@@ -1,0 +1,43 @@
+/* theme.css: the Hubble values (from ../color-palettes/palettes/hubble.css)
+   for an explicitly chosen theme. hubble.css follows the system setting; an
+   attribute selector outranks it, so <html data-theme> wins either way. */
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #FEFAF1;
+  --bg-2: #EAEEF7;
+  --ui: #E0E4ED;
+  --ui-2: #D6DAE4;
+  --ui-3: #CDD1DA;
+  --tx-3: #96999F;
+  --tx-2: #46494F;
+  --tx: #1B1F29;
+  --red: #BC443B;
+  --orange: #E9914A;
+  --yellow: #EECB2F;
+  --green: #4E9F48;
+  --cyan: #30B7B6;
+  --blue: #557CB6;
+  --purple: #7D49CB;
+  --magenta: #C2388F;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #16130D;
+  --bg-2: #181B21;
+  --ui: #1F2228;
+  --ui-2: #252830;
+  --ui-3: #2C2F36;
+  --tx-3: #555960;
+  --tx-2: #8F929A;
+  --tx: #D2D7E5;
+  --red: #CA5146;
+  --orange: #C67828;
+  --yellow: #D8B844;
+  --green: #44833E;
+  --cyan: #6CAAA8;
+  --blue: #598AD2;
+  --purple: #894FDF;
+  --magenta: #C2388F;
+}
