@@ -1,4 +1,4 @@
-import{n as e,t}from"./reactor-CUx62Pa_.js";function n(){let e=document.createElement(`div`);return e.className=`toggleWrapper`,e.innerHTML=`
+import{n as e,t}from"./reactor-BbvqANad.js";function n(){let e=document.createElement(`div`);return e.className=`toggleWrapper`,e.innerHTML=`
   <input class="input" id="dn" type="checkbox" />
   <label class="toggle" for="dn">
     <span class="toggle__handler">
