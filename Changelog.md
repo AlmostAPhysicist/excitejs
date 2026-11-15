@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.2.6] - 2026-11-14
+
+### Added
+
+* From the Ground Up example: a guide to ExciteJS and a docs page (site only, not part of the npm package)
+  * Every code block is a lab: a small editable file system with the page it makes directly under it, re-run when you stop typing
+  * A table under each result lists the Observables the code created, their values and the Reactors subscribed to them, with the latest events in order
+  * Steps add marked lines to the same files; a rounded rectangle marks the region the notes describe; exercises are checked on a hidden run and have solutions
+  * Sections: Observables and Reactors (dependencies detected automatically or given as `deps`, `initFn`, `auto_deps`, preactions, `trigger()`, pausing), Schedulers (stages, manual stages), a small app built file by file (components, shared state, a timer, routes, saved data), a pan and zoom canvas built by hand, and the Ising model from one arrow
+  * `docs.html`: every option, field and method of Observable, Reactor, Scheduler, Camera and Layer, with editable examples
+* Pan & Zoom example: a canvas camera for mouse, trackpad, touch, pen and keyboard (site only)
+  * `camera.ts`: input applied once per frame through a manual Scheduler stage, eased zoom about the cursor, flings, pinch, world bounds, smoothing of trackpad input; `FixedCamera` for still figures
+  * `layer.ts`: paints through any camera, shifting the previous frame on pans and painting only the uncovered strips
+  * `spatial_grid.ts`: a grid index for culling and hit tests
+* Ising Model example: a 2D Ising magnet that zooms from the whole lattice down to single spins, with a thermometer, Metropolis and heat-bath steps, slow annealing, and an illustrated explainer (site only)
+* README: links to the guide and the docs
+
 ## [0.2.5] - 2026-10-26
 
 ### Added

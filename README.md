@@ -10,6 +10,8 @@
 
 <p align="center">
   <a href="https://almostaphysicist.github.io/excitejs/">Live examples</a> ·
+  <a href="https://almostaphysicist.github.io/excitejs/src/examples/from-the-ground-up/index.html">Guide</a> ·
+  <a href="https://almostaphysicist.github.io/excitejs/src/examples/from-the-ground-up/docs.html">Docs</a> ·
   <a href="https://www.npmjs.com/package/excitejs">npm</a>
 </p>
 
