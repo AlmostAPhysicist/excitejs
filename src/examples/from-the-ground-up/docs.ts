@@ -1,0 +1,203 @@
+// docs.ts
+//
+// The docs page (docs.html): each factory, option, field and method of
+// ExciteJS and of the canvas pieces built on it, with a description and,
+// where it helps, an editable example.
+
+import "../color-palettes/palettes/hubble.css";
+import "./guide.css";
+import { el, Snippet } from "./kit.ts";
+import { Lab } from "./lab/lab.ts";
+
+type Item = HTMLElement | string;
+interface Part { id: string; title: string; node: HTMLElement }
+
+// name: shown in monospace; kind: what it is ("option", "field", "method"…)
+function Entry(id: string, name: string, kind: string, html: string): HTMLElement {
+    const box = el("div", "entry", `<h4>${name}<em>${kind}</em></h4>${html}`);
+    box.id = id;
+    return box;
+}
+
+// "## id | Title" starts a subsection; other strings are prose
+function Part(id: string, title: string, items: Item[]): Part {
+    const node = el("section", "section");
+    node.id = id;
+    node.append(el("h2", "", title));
+    for (const item of items) {
+        if (typeof item !== "string") { node.append(item); continue; }
+        const m = item.match(/^## (\S+) \| (.+)$/);
+        if (m) { const h = el("h3", "", m[2]); h.id = `${id}-${m[1]}`; node.append(h); }
+        else node.append(el("div", "prose", item));
+    }
+    return { id, title, node };
+}
+
+const parts: Part[] = [
+    Part("observable", "Observable", [
+        `<p><code>Observable(initial)</code> returns a plain object that holds one value and the set of Reactors subscribed to it. All of its fields are public.</p>`,
+        Snippet(`
+import { Observable } from "excitejs";
+
+const count = Observable(0);
+count.value;        // 0
+count.value = 1;    // stores 1 and triggers the subscribed Reactors`),
+        Lab("counter", { observers: "open" }),
+        "## members | Members",
+        Entry("observable-value", ".value", "read and write", `<p>Reading returns the value. If a Reactor is running and tracks its dependencies, the read subscribes it to this Observable.</p><p>Writing stores the value and triggers every subscribed Reactor, in the order they subscribed. A Reactor without a stage runs before the assignment returns; one with a stage is queued. The new value is not compared with the old one, so assigning the same value still triggers.</p>`),
+        Entry("observable-_value", "._value", "read and write", `<p>The stored value itself. Reading it does not subscribe. Writing it does not trigger. Use it in frame loops and event handlers, and inside a reaction when a value is needed without depending on it.</p>`),
+        Entry("observable-trigger", ".trigger()", "method", `<p>Triggers the subscribed Reactors without changing the value. Needed after changing something inside the held value, such as <code>list.value.push(x)</code>, and after writes to <code>_value</code>.</p>`),
+        Entry("observable-reactors", ".reactors", "field: Set of Reactors", `<p>The subscribed Reactors, in the order they run. It is an ordinary Set and may be edited; see <a href="#reactor-order">Order</a>.</p>`),
+        "## limits | Changes inside the value",
+        `<p>Only an assignment to <code>.value</code> triggers. Changing the inside of a held array or object does not. Follow such a change with <code>trigger()</code>, or assign a new array or object. The lab shows the assignment form.</p>`,
+        Lab("todo", { observers: "open" }),
+    ]),
+
+    Part("reactor", "Reactor", [
+        `<p><code>Reactor(reaction, options?)</code> runs a function again when the Observables it depends on change. It returns a plain object. Each option below is also a field of that object and can be changed later.</p>`,
+        Snippet(`
+import { Reactor } from "excitejs";
+
+const r = Reactor(() => {
+    label.textContent = count.value;   // reading .value subscribes r to count
+});`),
+        "## options | Options",
+        Entry("reactor-deps", "deps", "option: Observable[]", `<p>The dependency list can be set manually with <code>deps</code>, or detected automatically from what the reaction reads.</p><p>Without <code>deps</code>, the Reactor tracks its dependencies: before each run it unsubscribes from everything, and during the run each Observable whose <code>.value</code> it reads subscribes it. The dependencies are therefore the Observables read by the most recent run.</p><p>With <code>deps</code>, the Reactor is subscribed to the listed Observables and does not track. It can read other Observables without depending on them.</p>`),
+        Entry("reactor-initFn", "initFn", "option: true | false | function", `<p>What runs inside the <code>Reactor()</code> call.</p><ul><li><code>true</code>: the reaction. The default without <code>deps</code>, since a tracking Reactor has no dependencies until it has run.</li><li><code>false</code>: nothing. The default with <code>deps</code>. Without <code>deps</code> the Reactor then has no dependencies and stays inactive until <code>react()</code> is called.</li><li>A function: that function runs once in place of the reaction. Without <code>deps</code>, the Observables it reads are the initial dependencies. A function it returns becomes the first preaction.</li></ul>`),
+        Lab("greeting", { observers: "open", steps: [
+            { title: "Automatic", focus: "greeter", text: `<p>The dependencies are the Observables read by the last run.</p>` },
+            { title: "deps: [logged_in]", focus: "greeter", text: `<p>Depends on <code>logged_in</code> only. Does not run at creation.</p>` },
+            { title: "initFn: true", focus: "greeter", text: `<p>Also runs once at creation.</p>` },
+            { title: "auto_deps", text: `<p>The button toggles <code>greeter.auto_deps</code>. Off, the current list is kept.</p>` },
+        ] }),
+        Entry("reactor-preaction", "A returned function (the preaction)", "behaviour", `<p>If the reaction returns a function, the Reactor stores it and calls it before the next run and on <code>dispose()</code>. It is then discarded. Use it to undo what a run started: clear a timer, remove a listener, remove an element.</p>`),
+        Lab("stamp", { observers: "open", steps: [
+            { title: "No preaction", text: `<p>Each run adds a stamp and none is removed.</p>` },
+            { title: "A returned function", text: `<p>Each run first removes the previous stamp.</p>` },
+            { title: "dispose() and react()", text: `<p>Removes the stamp and unsubscribes; then runs again.</p>` },
+        ] }),
+        Entry("reactor-preaction-option", "preaction", "option: function", `<p>A preaction given as an option. By default it runs once and is discarded. With <code>auto_preaction: false</code> it is kept and runs before every reaction.</p>`),
+        Entry("reactor-auto_preaction", "auto_preaction", "option, default true", `<p>Whether a function returned by the reaction becomes the preaction. Set to <code>false</code> to keep one fixed <code>preaction</code> and ignore return values.</p>`),
+        Entry("reactor-auto_deps", "auto_deps", "option and field", `<p>Whether the dependency list (<code>observables</code>) is refilled on each run. <code>true</code> by default without <code>deps</code>, <code>false</code> with. Setting <code>reactor.auto_deps = false</code> later keeps the current dependencies and stops tracking.</p>`),
+        Entry("reactor-paused", "paused · reaction_paused · preaction_paused", "options and fields", `<p><code>paused</code> ignores triggers entirely. The other two skip the reaction or the preaction only. A trigger received while paused is dropped; unpausing does not run it. A Reactor created paused does not run at creation.</p>`),
+        Entry("reactor-schedules", "reaction_schedule · preaction_schedule", "options and fields: a stage", `<p>With <code>reaction_schedule</code>, a trigger adds the reaction to that stage (see <a href="#scheduler">Scheduler</a>). <code>preaction_schedule</code> does the same for the preaction; it should be the same stage or an earlier one, so that the preaction runs before the reaction. The run at creation ignores both.</p>`),
+        "## members | Fields and methods",
+        Entry("reactor-observables", ".observables", "field: Set of Observables", `<p>The current dependencies.</p>`),
+        Entry("reactor-react", ".react()", "method", `<p>Runs the reaction now, with tracking if the Reactor tracks.</p>`),
+        Entry("reactor-preact", ".preact()", "method", `<p>Runs the stored preaction now, if there is one.</p>`),
+        Entry("reactor-schedule", ".schedule()", "method", `<p>What an Observable calls to trigger the Reactor: runs the preaction and the reaction, or queues each on its stage.</p>`),
+        Entry("reactor-dispose", ".dispose()", "method", `<p>Runs the stored preaction and unsubscribes from every Observable. The object stays usable: <code>react()</code> on a tracking Reactor subscribes it again.</p>`),
+        Entry("reactor-detach", ".detachObservables()", "method", `<p>Unsubscribes from every Observable without running the preaction.</p>`),
+        Lab("remote", { observers: "open" }),
+        "## rules | Three rules",
+        `<ul>
+           <li>Tracking covers reads made while the reaction is executing. Reads in a timer callback, after an <code>await</code> or in an event handler are not tracked.</li>
+           <li>A tracking reaction that reads and writes the same Observable, as in <code>x.value++</code>, triggers itself without end. Use <code>deps</code>, or <code>x.value = x._value + 1</code>.</li>
+           <li>Creating a Reactor inside a running tracking Reactor ends the outer one's tracking for the rest of that run. Read the outer Reactor's dependencies before creating inner Reactors, and return a cleanup that disposes them.</li>
+         </ul>`,
+        "## order | Order",
+        `<p>Reactors subscribed to one Observable run in the order they subscribed. <code>moveToTop(set, item)</code>, <code>moveToBottom</code>, <code>moveUp</code> and <code>moveDown</code> from <code>core/priority</code> change that order. To order whole groups of Reactors, use stages.</p>`,
+        Lab("order", { observers: "none" }),
+    ]),
+
+    Part("scheduler", "Scheduler", [
+        `<p><code>Scheduler()</code> returns an ordered list of named stages. A Reactor with a <code>reaction_schedule</code> is queued on that stage when triggered. Stages run in the order they were created.</p>`,
+        Snippet(`
+import { Scheduler } from "excitejs";
+
+const scheduler = Scheduler();
+const compute = scheduler.getOrCreate("compute");
+const render = scheduler.getOrCreate("render");
+
+Reactor(() => { total.value = price.value * quantity.value; }, { reaction_schedule: compute });
+Reactor(() => { label.textContent = total.value; }, { reaction_schedule: render });`),
+        Lab("stages", { observers: "open", steps: [
+            { title: "No stage", text: `<p>Two assignments, two runs: two lines per click.</p>` },
+            { title: "One stage", focus: "render", text: `<p>Two assignments, one run.</p>` },
+            { title: "Two stages", focus: "compute", text: `<p><code>compute</code> was created first, so it runs before <code>render</code>.</p>` },
+        ] }),
+        "## members | Members",
+        Entry("scheduler-getOrCreate", ".getOrCreate(name, auto_flush = true)", "method", `<p>Returns the stage with that name, creating it after the existing stages if needed. With <code>auto_flush</code> true, adding a task requests a flush on the next microtask. With <code>false</code> the stage is manual and its tasks wait for <code>flush</code>.</p>`),
+        Entry("scheduler-flush", ".flush(stage?)", "method", `<p>With a stage: runs that stage's tasks now. Without: runs every stage in order, manual stages included. Each stage's queue is cleared before its tasks run, so work queued on a later stage runs in the same flush, and work queued on the same or an earlier stage runs in the next.</p>`),
+        Entry("scheduler-requestFlush", ".requestFlush()", "method", `<p>Requests one flush on the next microtask. Further requests before it runs have no effect.</p>`),
+        Entry("scheduler-schedules", ".schedules", "field: Set of stages", `<p>The stages, in order.</p>`),
+        Entry("schedule", "A stage: { name, tasks, auto_flush }", "object", `<p><code>tasks</code> is a Set, so a Reactor queued several times runs once. <code>auto_flush</code> is read each time a task is added and can be changed at any time.</p>`),
+        "## manual | A manual stage",
+        Lab("trail", { observers: "open" }),
+        `<p>A Reactor's run at creation ignores its stage. Each Scheduler has its own microtask, so two Schedulers are not ordered relative to each other. A manual stage that must wait for an explicit <code>flush(stage)</code> needs its own Scheduler.</p>`,
+    ]),
+
+    Part("patterns", "Patterns", [
+        `<p>These are conventions used in the examples. Each is built step by step in the <a href="./index.html#app">Building a page</a> section of the guide.</p>`,
+        Entry("pattern-component", "Component", "pattern", `<p>A function, named in PascalCase, that creates an element, assigns Observables from its event handlers, creates Reactors for the parts that change, and returns the element.</p>`),
+        Entry("pattern-state", "Shared state", "pattern", `<p>A file that exports Observables. Every file that imports one uses the same object.</p>`),
+        Entry("pattern-mount", "Showing and removing", "pattern", `<p>A Reactor that adds an element to the page and returns a function that removes it.</p>`),
+        Entry("pattern-dispose", "Disposal", "pattern", `<p>Reactors are not collected into groups. A component that owns a timer or a listener, or whose Reactors depend on state that outlives it, returns a <code>dispose</code> function with its element.</p>`),
+        Entry("pattern-shape", "Larger objects", "convention", `<p>Camera and Layer follow one layout: a factory returns a plain object with Observables for state other code may depend on, plain fields for settings that are read when used, methods, and an object named <code>_</code> for internals. Names use <code>snake_case</code> for data, <code>camelCase</code> for functions and <code>PascalCase</code> for factories.</p>`),
+    ]),
+
+    Part("camera", "Camera", [
+        `<p>From the <a href="../pan-zoom/index.html">Pan &amp; Zoom</a> example, in <code>src/examples/pan-zoom/camera.ts</code>. <code>Camera(element, options?)</code> turns mouse, trackpad, touch, pen and keyboard input on an element into a view: the world point at the element's centre and the number of pixels per world unit. It draws nothing.</p>`,
+        Lab("camera", { observers: "open", result: "above" }),
+        "## published | Observables",
+        Entry("camera-view", "view", "Observable: { x, y, scale }", `<p>The current view. Assigned at most once per frame.</p>`),
+        Entry("camera-screen", "screen", "Observable: { w, h, dpr }", `<p>The element's size in CSS pixels and the device pixel ratio. Updated on resize and on browser zoom.</p>`),
+        Entry("camera-limits", "zoom_limits · world_bounds", "Observables", `<p><code>{ min, max }</code> for the scale, and a world rectangle the view is kept on, or <code>null</code>. Assigning either applies immediately.</p>`),
+        Entry("camera-wheel", "wheel_mode", `Observable: "auto" | "zoom" | "pan"`, `<p>A mouse wheel and a two-finger scroll both send wheel events. <code>"auto"</code> classifies each burst (a wheel zooms, a trackpad pans). The other values force one behaviour.</p>`),
+        Entry("camera-inputs", "tap · hover · pointer_down · last_input", "Observables", `<p>The latest press and release without a drag, with world coordinates and a count of 2 for a double tap; the pointer position while not dragging; whether a pointer is down; the kind of input that last moved the camera.</p>`),
+        "## settings | Settings",
+        Entry("camera-settings", "zoom_ms · smooth_ms · friction_ms · wheel_speed · pinch_speed", "fields: numbers", `<p>Time constants for eased zooms (90 ms), for smoothing trackpad input (40 ms) and for the decay of momentum (320 ms); and the zoom per pixel of wheel or pinch movement.</p>`),
+        Entry("camera-flags", "keyboard · double_tap · momentum · overscroll · tap_slop · home_view", "fields", `<p>Enable keyboard control, double-tap zoom and momentum; how far past <code>world_bounds</code> the view may go, as a fraction of the screen (0.2); how far a press may move and still count as a tap, per input kind; a function returning the view that <code>goHome()</code> goes to.</p>`),
+        Entry("camera-auto", "auto_advance", "field, default true", `<p>When true, the Camera requests its own animation frames while moving. Set it to <code>false</code> and call <code>advance(now)</code> from your own frame loop to run the Camera in the same frame as other updates.</p>`),
+        "## methods | Methods",
+        Entry("camera-moves", "zoomAt · zoomTo · panBy · lookAt · fit · goHome · stop", "methods", `<p>Each sets the target, and the view eases to it; pass <code>false</code> as the last argument to jump. <code>zoomAt(factor, sx?, sy?)</code> zooms about a screen point. <code>fit(rect, padding?)</code> frames a world rectangle. <code>stop()</code> halts the motion.</p>`),
+        Entry("camera-geometry", "toWorld · toScreen · visibleWorld", "methods", `<p>Convert between screen and world coordinates for the current view, and return the world rectangle on screen.</p>`),
+        Entry("camera-frame", "advance(now) · isMoving() · measure() · dispose()", "methods", `<p><code>advance</code> runs one frame (input, momentum, easing, limits, one assignment to <code>view</code>) and returns whether anything is still moving. <code>dispose</code> removes the Camera's listeners and Reactors.</p>`),
+        "## fixed | FixedCamera",
+        Entry("fixedcamera", "FixedCamera(element, rect, padding = 0)", "factory", `<p>Frames a world rectangle in an element. It refits when the element is resized or its <code>frame</code> Observable is assigned, and it takes no input. It has <code>view</code> and <code>screen</code>, which is what a Layer requires.</p>`),
+    ]),
+
+    Part("layer", "Layer and SpatialGrid", [
+        `<p><code>Layer(camera, canvas, options)</code> keeps a canvas showing the world through a camera and repaints as little as possible. The camera can be any object with <code>view</code> and <code>screen</code> Observables.</p>`,
+        Entry("layer-paint", "paint(brush, world, screen)", "option and field", `<p>Called with a region to fill, in world units and in screen pixels, with the canvas clipped to it. It must draw what overlaps the region, and draw the same pixels for the same view, because on a pan the Layer keeps the old pixels and asks only for the uncovered strips.</p><p><code>brush</code> has the context (<code>ctx</code>), the <code>scale</code>, <code>toScreen(x, y)</code>, <code>useWorld()</code> to draw in world units and <code>useScreen()</code> to draw in CSS pixels.</p>`),
+        Entry("layer-deps", "deps", "option: Observable[]", `<p>The Observables the content depends on. A change to any of them repaints the whole canvas.</p>`),
+        Entry("layer-schedule", "schedule", "option: a stage", `<p>The stage the render runs on. With a stage, a frame in which the view and the content both change paints once.</p>`),
+        Entry("layer-flags", "blit · transparent", "options and fields", `<p><code>blit</code> (default true) shifts the previous frame on pans and paints only the uncovered strips. <code>transparent</code> clears to transparent before painting, for a Layer drawn over another.</p>`),
+        Entry("layer-members", "invalidate() · render() · version · last_render · dispose()", "members", `<p><code>invalidate()</code> forces a full repaint at the next render. <code>last_render</code> is an Observable describing the last render: <code>"full"</code>, <code>"blit"</code> or <code>"idle"</code>, its duration, and the fraction of the screen painted.</p>`),
+        "## grid | SpatialGrid",
+        Entry("spatialgrid", "SpatialGrid(items, cell = 256)", "factory", `<p>Indexes items that have a <code>rect</code> by the grid cells their rectangles overlap. <code>within(rect)</code> returns the items overlapping a rectangle, in their original order; <code>at(x, y)</code> returns those containing a point. The index is built once and must be rebuilt when items move.</p>`),
+        `<p>The <a href="./index.html#canvas">canvas section</a> of the guide builds simplified versions of the Camera and the Layer.</p>`,
+    ]),
+];
+
+function Nav(): HTMLElement {
+    const nav = el("nav", "docs-nav");
+    nav.setAttribute("aria-label", "Contents");
+    for (const part of parts) {
+        const h = el("h4");
+        const top = el("a", "", part.title);
+        top.href = "#" + part.id;
+        h.append(top);
+        nav.append(h);
+        for (const entry of part.node.querySelectorAll<HTMLElement>(".entry")) {
+            const a = el("a", "", entry.querySelector("h4")!.firstChild!.textContent ?? "");
+            a.href = "#" + entry.id;
+            nav.append(a);
+        }
+    }
+    return nav;
+}
+
+const top = el("nav", "top", `<a class="top-home" href="./index.html">ExciteJS, from the ground up</a><div class="top-links"><a href="./index.html">Guide</a><a href="./docs.html" aria-current="true">Docs</a></div>`);
+
+const main = el("div", "docs-main");
+main.append(el("header", "hero", `
+  <h1>Docs</h1>
+  <p>Observable, Reactor and Scheduler, and the Camera and Layer built with them. The code blocks are running and can be edited.</p>
+  <p>The <a href="./index.html">guide</a> introduces the same material through examples.</p>`), ...parts.map(p => p.node));
+
+const body = el("div", "docs");
+body.append(Nav(), main);
+const page = el("main", "page");
+page.append(body);
+document.body.append(top, page);

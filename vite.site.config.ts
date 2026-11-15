@@ -32,6 +32,8 @@ export default defineConfig({
                 "color-palettes": resolve(__dirname, "src/examples/color-palettes/index.html"),
                 "pan-zoom": resolve(__dirname, "src/examples/pan-zoom/index.html"),
                 "ising-model": resolve(__dirname, "src/examples/ising-model/index.html"),
+                "from-the-ground-up": resolve(__dirname, "src/examples/from-the-ground-up/index.html"),
+                "from-the-ground-up-docs": resolve(__dirname, "src/examples/from-the-ground-up/docs.html"),
             }
         }
     }

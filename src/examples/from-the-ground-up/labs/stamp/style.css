@@ -1,0 +1,4 @@
+.board { position: relative; width: 120px; height: 120px; border-radius: 8px; background: var(--bg-2); }
+.stamp { position: absolute; inset: 20px; opacity: .85; }
+.stamp.square { background: var(--blue); }
+.stamp.circle { background: var(--orange); border-radius: 50%; }

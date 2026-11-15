@@ -35,6 +35,14 @@ const EXAMPLES: Example[] = [
         thumbnail_width: 1440,
     },
     {
+        slug: "from-the-ground-up",
+        title: "From the Ground Up",
+        description: "A guide to ExciteJS in which every code block is running and can be edited, with its result under it: Observables and Reactors, Schedulers, a small app built file by file, a pan and zoom canvas built by hand, and the Ising model from one arrow. With exercises, solutions and a separate docs page.",
+        tags: ["guide", "auto deps", "explicit deps", "preaction", "scheduler"],
+        level: 1,
+        thumbnail_width: 1440,
+    },
+    {
         slug: "ising-model",
         title: "Ising Model",
         description: "A live 2D Ising magnet you can pan and zoom from the whole lattice down to single spins, with a thermometer to drag through the critical point, and an illustrated explainer of the Markov step, Boltzmann odds and Onsager's T_c.",
